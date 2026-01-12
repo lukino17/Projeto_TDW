@@ -1,0 +1,21 @@
+{
+  "name": "projeto_tdw",
+  "version": "1.0.0",
+  "description": "",
+  "main": "backend/node_modules/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "projeto"
+  ],
+  "author": "João",
+  "license": "ISC",
+  "dependencies": {
+    "basic-auth": "^2.0.1",
+    "express": "^5.2.1",
+    "mongodb": "^7.0.0",
+    "mongoos": "^0.0.1-security",
+    "mongoose": "^9.0.1"
+  }
+}
