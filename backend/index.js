@@ -1,11 +1,8 @@
-const cors = require('cors');
 const express = require('express');
 const mongoose = require('mongoose');
 
 const app = express();
-app.use(cors());
 const PORT = 3000;
-app.use(express.json());
 
 const User = require('./models/User');
 const Oficina = require('./models/Oficina');
