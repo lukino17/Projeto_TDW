@@ -80,13 +80,39 @@ function App() {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    cliente: user.id,
+                    cliente: user._id,
                     veiculo: veiculoSelecionado,
                     oficina: oficinaSelecionada._id,
                     servico: servicoSelecionado,
                     dataHora
                 })
             });
+
+            const cancelarMarcacao = async (idMarcacao) => {
+                const confirmar = window.confirm("Tem a certeza que quer cancelar esta marcação?");
+                if (!confirmar) return;
+
+                try {
+                    const resposta = await fetch(
+                        `http://localhost:3000/marcacoes/${idMarcacao}/cancelar`,
+                        {
+                            method: "PUT"
+                        }
+                    );
+
+                    const dados = await resposta.json();
+
+                    if (resposta.ok) {
+                        alert("Marcação cancelada com sucesso!");
+                        carregarMarcacoes(); // 🔄 ATUALIZA A LISTA
+                    } else {
+                        alert(dados.erro);
+                    }
+                } catch (error) {
+                    alert("Erro ao cancelar marcação");
+                }
+            };
+
 
             const dados = await resposta.json();
 
@@ -106,7 +132,7 @@ function App() {
     const carregarMarcacoes = async () => {
         try {
             const resposta = await fetch(
-                `http://localhost:3000/marcacoes/${user.id}`
+                `http://localhost:3000/marcacoes/${user._id}`
             );
             const dados = await resposta.json();
             setMarcacoes(dados);
@@ -114,6 +140,32 @@ function App() {
             console.error(error);
         }
     };
+
+    const cancelarMarcacao = async (idMarcacao) => {
+        const confirmar = window.confirm("Tem a certeza que quer cancelar esta marcação?");
+        if (!confirmar) return;
+
+        try {
+            const resposta = await fetch(
+                `http://localhost:3000/marcacoes/${idMarcacao}/cancelar`,
+                {
+                    method: "PUT"
+                }
+            );
+
+            const dados = await resposta.json();
+
+            if (resposta.ok) {
+                alert("Marcação cancelada com sucesso!");
+                carregarMarcacoes(); // 🔄 ATUALIZA A LISTA
+            } else {
+                alert(dados.erro);
+            }
+        } catch (error) {
+            alert("Erro ao cancelar marcação");
+        }
+    };
+
 
 
     // CARREGAR OFICINAS
@@ -367,8 +419,17 @@ function App() {
                                 <strong>Oficina:</strong> {m.oficina?.nome}<br />
                                 <strong>Serviço:</strong> {m.servico?.nome}<br />
                                 <strong>Veículo:</strong> {m.veiculo?.marca} {m.veiculo?.modelo} ({m.veiculo?.matricula})<br />
-                                <strong>Data:</strong> {new Date(m.dataHora).toLocaleString()}
+                                <strong>Data:</strong> {new Date(m.dataHora).toLocaleString()}<br />
+
+                                {m.estado !== "cancelada" ? (
+                                    <button onClick={() => cancelarMarcacao(m._id)}>
+                                        Cancelar
+                                    </button>
+                                ) : (
+                                    <span style={{ color: "red" }}>❌ Cancelada</span>
+                                )}
                             </li>
+
                         ))}
                     </ul>
 
