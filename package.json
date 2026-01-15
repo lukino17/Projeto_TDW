@@ -13,6 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "basic-auth": "^2.0.1",
+    "cor": "^0.0.0",
+    "cors": "^2.8.5",
     "express": "^5.2.1",
     "mongodb": "^7.0.0",
     "mongoos": "^0.0.1-security",

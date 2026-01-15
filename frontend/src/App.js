@@ -278,7 +278,7 @@ function App() {
                 </div>
             )}
 
-            {/* APÓS LOGIN */}
+            {/* dps o LOGIN */}
             {user && (
                 <div>
                     <h1>Bem-vindo, {user.nome}</h1>
@@ -426,7 +426,7 @@ function App() {
                                         Cancelar
                                     </button>
                                 ) : (
-                                    <span style={{ color: "red" }}>❌ Cancelada</span>
+                                    <span style={{ color: "red" }}> Cancelada</span>
                                 )}
                             </li>
 
