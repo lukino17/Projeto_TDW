@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import "./App.css";
+
 
 function App() {
 
@@ -80,7 +82,7 @@ function App() {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    cliente: user._id,
+                    cliente: user.id,
                     veiculo: veiculoSelecionado,
                     oficina: oficinaSelecionada._id,
                     servico: servicoSelecionado,
@@ -88,38 +90,12 @@ function App() {
                 })
             });
 
-            const cancelarMarcacao = async (idMarcacao) => {
-                const confirmar = window.confirm("Tem a certeza que quer cancelar esta marcação?");
-                if (!confirmar) return;
-
-                try {
-                    const resposta = await fetch(
-                        `http://localhost:3000/marcacoes/${idMarcacao}/cancelar`,
-                        {
-                            method: "PUT"
-                        }
-                    );
-
-                    const dados = await resposta.json();
-
-                    if (resposta.ok) {
-                        alert("Marcação cancelada com sucesso!");
-                        carregarMarcacoes(); // 🔄 ATUALIZA A LISTA
-                    } else {
-                        alert(dados.erro);
-                    }
-                } catch (error) {
-                    alert("Erro ao cancelar marcação");
-                }
-            };
-
-
             const dados = await resposta.json();
 
             if (resposta.ok) {
                 alert("Marcação criada com sucesso!");
                 setDataHora("");
-                carregarMarcacoes();
+                carregarMarcacoes(); // 🔄 atualizar lista
             } else {
                 alert(dados.erro);
             }
@@ -128,11 +104,12 @@ function App() {
         }
     };
 
+
     //Carregar MARCACOES
     const carregarMarcacoes = async () => {
         try {
             const resposta = await fetch(
-                `http://localhost:3000/marcacoes/${user._id}`
+                `http://localhost:3000/marcacoes/cliente/${user.id}`
             );
             const dados = await resposta.json();
             setMarcacoes(dados);
@@ -140,6 +117,7 @@ function App() {
             console.error(error);
         }
     };
+
 
     const cancelarMarcacao = async (idMarcacao) => {
         const confirmar = window.confirm("Tem a certeza que quer cancelar esta marcação?");
@@ -213,6 +191,11 @@ function App() {
 
             if (resposta.ok) {
                 alert("Veículo criado com sucesso!");
+
+                setVeiculos([...veiculos, dados.veiculo]);
+                setVeiculoSelecionado(dados.veiculo._id);
+
+                // limpar inputs
                 setMarca("");
                 setModelo("");
                 setMatricula("");
@@ -224,6 +207,7 @@ function App() {
             alert("Erro ao criar veículo");
         }
     };
+
 
     // CARREGARVEICULOS
     const carregarVeiculos = async () => {
@@ -249,7 +233,7 @@ function App() {
     }, [user]);
 
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial" }}>
+        <div className="app-container">
 
             {/* LOGIN */}
             {!user && (

@@ -36,3 +36,151 @@
     transform: rotate(360deg);
   }
 }
+
+/* RESET BÁSICO */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body {
+    background: #f4f6f8;
+    color: #333;
+}
+
+/* CONTAINER PRINCIPAL */
+.app-container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* TÍTULOS */
+h1 {
+    font-size: 26px;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 20px;
+    margin: 25px 0 10px;
+}
+
+h3 {
+    margin: 15px 0;
+}
+
+/* INPUTS */
+input,
+select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* BOTÕES */
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button.secondary {
+    background: #6c757d;
+}
+
+button.danger {
+    background: #dc3545;
+}
+
+button.danger:hover {
+    background: #b02a37;
+}
+
+/* LISTAS */
+ul {
+    list-style: none;
+    margin-top: 10px;
+}
+
+li {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+/* CARTÕES */
+.card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+/* OFICINAS */
+.oficina-card strong {
+    font-size: 16px;
+}
+
+/* MARCAÇÕES */
+.marcacao {
+    border-left: 5px solid #007bff;
+}
+
+.marcacao.cancelada {
+    border-left-color: #dc3545;
+    opacity: 0.7;
+}
+
+/* TEXTO AUXILIAR */
+.muted {
+    color: #777;
+    font-size: 14px;
+}
+
+/* LOGIN */
+.login-box {
+    max-width: 400px;
+    margin: 60px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.login-box button {
+    width: 100%;
+}
+
+/* SEPARADORES */
+hr {
+    margin: 30px 0;
+    border: none;
+    border-top: 1px solid #eee;
+}
+
