@@ -18,6 +18,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         enum: ['admin', 'staff', 'cliente'],
         default: 'cliente'
+    },
+    oficina:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Oficina',
     }
 }, {
     timestamps: true

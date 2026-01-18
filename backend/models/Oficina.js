@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+
 const OficinaSchema = new mongoose.Schema({
     nome: {
         type: String,
@@ -15,6 +16,9 @@ const OficinaSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+
+
 });
+
 
 module.exports = mongoose.model('Oficina', OficinaSchema);

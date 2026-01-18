@@ -1,3 +1,4 @@
+require("dotenv").config();
 const cors = require('cors');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -13,8 +14,23 @@ const Servico = require('./models/Servico');
 const Veiculo = require('./models/Veiculo');
 const Marcacao = require('./models/Marcacao');
 
+app.use("/auth", require("./routes/auth.routes"));
+app.use("/oficinas", require("./routes/oficinas.routes"));
+app.use("/servicos", require("./routes/servicos.routes"));
+app.use("/veiculos", require("./routes/veiculos.routes"));
+app.use("/marcacoes", require("./routes/marcacoes.routes"));
 
+const authRoutes = require("./routes/auth.routes");
+const veiculosRoutes = require("./routes/veiculos.routes");
+const oficinasRoutes = require("./routes/oficinas.routes");
+const usersRoutes = require("./routes/users.routes");
+const marcacoesRoutes = require("./routes/marcacoes.routes");
 
+app.use("/marcacoes", marcacoesRoutes);
+app.use("/auth", authRoutes);
+app.use("/oficinas", oficinasRoutes);
+app.use("/users", usersRoutes);
+app.use("/veiculos", veiculosRoutes);
 
 app.use(express.json());
 
