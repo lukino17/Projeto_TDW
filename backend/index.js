@@ -357,7 +357,7 @@ app.put('/marcacoes/:id/cancelar', async (req, res) => {
 
 
 
-// INICIAR SERVIDOR
+
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
