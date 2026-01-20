@@ -137,6 +137,20 @@ export default function Page() {
         setMarcacoesOficina(await r.json());
     };
 
+    const atualizarEstadoMarcacao = async (id, estado) => {
+        await fetch(`http://localhost:3000/marcacoes/${id}/estado`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ estado })
+        });
+
+        carregarMarcacoesOficina();
+    };
+
+
     // ---------------- EFFECT ----------------
     useEffect(() => {
         if (!user || !token) return;
@@ -231,16 +245,40 @@ export default function Page() {
             {user.role === "staff" && (
                 <>
                     <h2>Marcações da Minha Oficina</h2>
+
+                    {marcacoesOficina.length === 0 && (
+                        <p>Sem marcações.</p>
+                    )}
+
                     {marcacoesOficina.map(m => (
                         <div key={m._id} className="card">
                             <strong>{m.servico?.nome}</strong><br />
                             Cliente: {m.cliente?.nome}<br />
                             Veículo: {m.veiculo?.matricula}<br />
-                            Data: {new Date(m.dataHora).toLocaleString()}
+                            Data: {new Date(m.dataHora).toLocaleString()}<br />
+                            Estado: <strong>{m.estado}</strong>
+
+                            <div style={{ marginTop: "10px" }}>
+                                <button onClick={() => atualizarEstadoMarcacao(m._id, "em_progresso")}>
+                                    Em progresso
+                                </button>
+
+                                <button onClick={() => atualizarEstadoMarcacao(m._id, "concluida")}>
+                                    Concluir
+                                </button>
+
+                                <button
+                                    className="danger"
+                                    onClick={() => atualizarEstadoMarcacao(m._id, "cancelada")}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </>
             )}
+
         </div>
     );
 }

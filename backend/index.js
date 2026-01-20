@@ -228,6 +228,12 @@ app.post('/veiculos', async (req, res) => {
     try {
         const { marca, modelo, matricula, ano, cliente } = req.body;
 
+        const user = await User.findById(cliente);
+
+        if (!user || user.role !== "cliente") {
+            return res.status(403).json({ erro: "Apenas clientes podem criar veículos" });
+        }
+
         const veiculo = await Veiculo.create({
             marca,
             modelo,
@@ -248,6 +254,7 @@ app.post('/veiculos', async (req, res) => {
     }
 });
 
+
     app.get('/veiculos/:clienteId', async (req, res) => {
         try {
             const { clienteId } = req.params;
@@ -264,6 +271,12 @@ app.post('/marcacoes', async (req, res) => {
     try {
         const { cliente, veiculo, oficina, servico, dataHora } = req.body;
 
+        const user = await User.findById(cliente);
+
+        if (!user || user.role !== "cliente") {
+            return res.status(403).json({ erro: "Apenas clientes podem criar marcações" });
+        }
+
         const marcacao = await Marcacao.create({
             cliente,
             veiculo,
@@ -276,6 +289,7 @@ app.post('/marcacoes', async (req, res) => {
             mensagem: 'Marcação criada com sucesso',
             marcacao
         });
+
     } catch (error) {
         res.status(400).json({
             erro: 'Erro ao criar marcação',
@@ -283,6 +297,7 @@ app.post('/marcacoes', async (req, res) => {
         });
     }
 });
+
 
 app.get('/marcacoes/cliente/:id', async (req, res) => {
     try {

@@ -94,6 +94,51 @@ router.get(
     }
 );
 
+// STAFF atualiza estado da marcação
+router.put(
+    "/:id/estado",
+    verificarToken,
+    verificarRole(["staff"]),
+    async (req, res) => {
+        try {
+            const { estado } = req.body;
+
+            const estadosValidos = [
+                "agendada",
+                "em_progresso",
+                "concluida",
+                "cancelada"
+            ];
+
+            if (!estadosValidos.includes(estado)) {
+                return res.status(400).json({ erro: "Estado inválido" });
+            }
+
+            const staff = await User.findById(req.user.id);
+
+            if (!staff.oficina) {
+                return res.status(400).json({ erro: "Staff sem oficina associada" });
+            }
+
+            const marcacao = await Marcacao.findOne({
+                _id: req.params.id,
+                oficina: staff.oficina
+            });
+
+            if (!marcacao) {
+                return res.status(404).json({ erro: "Marcação não encontrada" });
+            }
+
+            marcacao.estado = estado;
+            await marcacao.save();
+
+            res.json(marcacao);
+        } catch (error) {
+            res.status(500).json({ erro: error.message });
+        }
+    }
+);
+
 
 /**
  * STAFF confirma marcação
