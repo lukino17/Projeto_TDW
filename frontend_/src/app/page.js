@@ -5,54 +5,54 @@ import "./globals.css";
 
 export default function Page() {
 
-    // LOGIN
+    // AUTH
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [mensagem, setMensagem] = useState("");
+    const [token, setToken] = useState(null);
 
-    // UTILIZADOR LOGADO
+    // USER
     const [user, setUser] = useState(null);
 
-    // OFICINAS
+    // CLIENTE
     const [oficinas, setOficinas] = useState([]);
-
-    // OFICINA SELECIONADA
+    const [servicos, setServicos] = useState([]);
     const [oficinaSelecionada, setOficinaSelecionada] = useState(null);
 
-    // SERVIÇOS
-    const [servicos, setServicos] = useState([]);
+    const [veiculos, setVeiculos] = useState([]);
+    const [veiculoSelecionado, setVeiculoSelecionado] = useState("");
+    const [servicoSelecionado, setServicoSelecionado] = useState("");
+    const [dataHora, setDataHora] = useState("");
+    const [marcacoes, setMarcacoes] = useState([]);
 
-    // VEÍCULO
+    // VEICULO
     const [marca, setMarca] = useState("");
     const [modelo, setModelo] = useState("");
     const [matricula, setMatricula] = useState("");
     const [ano, setAno] = useState("");
 
-    const [veiculos, setVeiculos] = useState([]);
-    const [veiculoSelecionado, setVeiculoSelecionado] = useState("");
+    // STAFF
+    const [marcacoesOficina, setMarcacoesOficina] = useState([]);
 
-    // MARCAÇÕES
-    const [servicoSelecionado, setServicoSelecionado] = useState("");
-    const [dataHora, setDataHora] = useState("");
-    const [marcacoes, setMarcacoes] = useState([]);
-
-    // LOGIN
+    // ---------------- LOGIN ----------------
     const fazerLogin = async () => {
         try {
-            const resposta = await fetch("http://localhost:3000/auth/login", {
+            const r = await fetch("http://localhost:3000/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
             });
 
-            const dados = await resposta.json();
+            const dados = await r.json();
 
-            if (resposta.ok) {
-                setUser(dados.user);
-                setMensagem("");
-            } else {
+            if (!r.ok) {
                 setMensagem(dados.erro);
+                return;
             }
+
+            setUser(dados.user);
+            setToken(dados.token);
+            setMensagem("");
         } catch {
             setMensagem("Erro ao ligar ao servidor");
         }
@@ -60,24 +60,13 @@ export default function Page() {
 
     const logout = () => {
         setUser(null);
-        setEmail("");
-        setPassword("");
+        setToken(null);
     };
 
-    // CARREGAR DADOS
+    // ---------------- CLIENTE ----------------
     const carregarOficinas = async () => {
         const r = await fetch("http://localhost:3000/oficinas");
         setOficinas(await r.json());
-    };
-
-    const carregarVeiculos = async () => {
-        const r = await fetch(`http://localhost:3000/veiculos/${user.id}`);
-        setVeiculos(await r.json());
-    };
-
-    const carregarMarcacoes = async () => {
-        const r = await fetch(`http://localhost:3000/marcacoes/cliente/${user.id}`);
-        setMarcacoes(await r.json());
     };
 
     const carregarServicos = async (id) => {
@@ -85,17 +74,32 @@ export default function Page() {
         setServicos(await r.json());
     };
 
-    // CRIAR VEÍCULO
+    const carregarVeiculos = async () => {
+        const r = await fetch(`http://localhost:3000/veiculos/${user.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setVeiculos(await r.json());
+    };
+
+    const carregarMarcacoesCliente = async () => {
+        const r = await fetch(`http://localhost:3000/marcacoes/cliente/${user.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setMarcacoes(await r.json());
+    };
+
     const criarVeiculo = async () => {
         const r = await fetch("http://localhost:3000/veiculos", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify({
                 marca,
                 modelo,
                 matricula,
-                ano,
-                cliente: user.id
+                ano
             })
         });
 
@@ -103,21 +107,18 @@ export default function Page() {
 
         if (r.ok) {
             setVeiculos([...veiculos, dados.veiculo]);
-            setVeiculoSelecionado(dados.veiculo._id);
-            setMarca("");
-            setModelo("");
-            setMatricula("");
-            setAno("");
+            setMarca(""); setModelo(""); setMatricula(""); setAno("");
         }
     };
 
-    // CRIAR MARCAÇÃO
     const criarMarcacao = async () => {
         await fetch("http://localhost:3000/marcacoes", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify({
-                cliente: user.id,
                 veiculo: veiculoSelecionado,
                 oficina: oficinaSelecionada._id,
                 servico: servicoSelecionado,
@@ -125,44 +126,53 @@ export default function Page() {
             })
         });
 
-        carregarMarcacoes();
+        carregarMarcacoesCliente();
     };
 
-    const cancelarMarcacao = async (id) => {
-        await fetch(`http://localhost:3000/marcacoes/${id}/cancelar`, {
-            method: "PUT"
+    // ---------------- STAFF ----------------
+    const carregarMarcacoesOficina = async () => {
+        const r = await fetch("http://localhost:3000/marcacoes/oficina", {
+            headers: { Authorization: `Bearer ${token}` }
         });
-        carregarMarcacoes();
+        setMarcacoesOficina(await r.json());
     };
 
+    // ---------------- EFFECT ----------------
     useEffect(() => {
-        if (user) {
+        if (!user || !token) return;
+
+        if (user.role === "cliente") {
             carregarOficinas();
             carregarVeiculos();
-            carregarMarcacoes();
+            carregarMarcacoesCliente();
         }
-    }, [user]);
+
+        if (user.role === "staff") {
+            carregarMarcacoesOficina();
+        }
+    }, [user, token]);
+
+    // ---------------- UI ----------------
+    if (!user) {
+        return (
+            <div className="card">
+                <h1>Login</h1>
+                <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+                <button onClick={fazerLogin}>Entrar</button>
+                <p>{mensagem}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="app-container">
+            <h1>Bem-vindo, {user.nome} ({user.role})</h1>
+            <button onClick={logout}>Logout</button>
 
-            {!user && (
-                <div className="card">
-                    <h1>Login</h1>
-
-                    <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-                    <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-
-                    <button onClick={fazerLogin}>Entrar</button>
-                    <p>{mensagem}</p>
-                </div>
-            )}
-
-            {user && (
+            {/* -------- CLIENTE -------- */}
+            {user.role === "cliente" && (
                 <>
-                    <h1>Bem-vindo, {user.nome}</h1>
-                    <button onClick={logout}>Logout</button>
-
                     <h2>Criar Veículo</h2>
                     <input placeholder="Marca" value={marca} onChange={e => setMarca(e.target.value)} />
                     <input placeholder="Modelo" value={modelo} onChange={e => setModelo(e.target.value)} />
@@ -177,7 +187,9 @@ export default function Page() {
                             <button onClick={() => {
                                 setOficinaSelecionada(o);
                                 carregarServicos(o._id);
-                            }}>Ver serviços</button>
+                            }}>
+                                Ver serviços
+                            </button>
                         </div>
                     ))}
 
@@ -210,9 +222,21 @@ export default function Page() {
                     {marcacoes.map(m => (
                         <div key={m._id}>
                             {m.servico?.nome} - {new Date(m.dataHora).toLocaleString()}
-                            {m.estado !== "cancelada" &&
-                                <button onClick={() => cancelarMarcacao(m._id)}>Cancelar</button>
-                            }
+                        </div>
+                    ))}
+                </>
+            )}
+
+            {/* -------- STAFF -------- */}
+            {user.role === "staff" && (
+                <>
+                    <h2>Marcações da Minha Oficina</h2>
+                    {marcacoesOficina.map(m => (
+                        <div key={m._id} className="card">
+                            <strong>{m.servico?.nome}</strong><br />
+                            Cliente: {m.cliente?.nome}<br />
+                            Veículo: {m.veiculo?.matricula}<br />
+                            Data: {new Date(m.dataHora).toLocaleString()}
                         </div>
                     ))}
                 </>

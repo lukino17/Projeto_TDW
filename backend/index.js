@@ -25,7 +25,11 @@ const veiculosRoutes = require("./routes/veiculos.routes");
 const oficinasRoutes = require("./routes/oficinas.routes");
 const usersRoutes = require("./routes/users.routes");
 const marcacoesRoutes = require("./routes/marcacoes.routes");
+const servicosRoutes = require("./routes/servicos.routes");
 
+app.use("/servicos", require("./routes/servicos.public.routes"));
+
+app.use("/servicos", servicosRoutes);
 app.use("/marcacoes", marcacoesRoutes);
 app.use("/auth", authRoutes);
 app.use("/oficinas", oficinasRoutes);
@@ -174,7 +178,7 @@ app.post('/oficinas', async (req, res) => {
     app.post('/oficinas/:id/servicos', async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome, preco, duracao, descricaoPublica, descricaoPrivada } = req.body;
+        const { nome, preco, duracao, descricaoPublica, descricaoPr696d2ee62cc9f321d94ddfc2ivada } = req.body;
 
         // verificar se a oficina existe
         const oficina = await Oficina.findById(id);

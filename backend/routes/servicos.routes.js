@@ -2,28 +2,65 @@ const express = require("express");
 const router = express.Router();
 
 const Servico = require("../models/Servico");
-const auth = require("../middlewares/auth");
+const Oficina = require("../models/Oficina");
+const verificarToken = require("../middlewares/verificarToken");
 const verificarRole = require("../middlewares/verificarRole");
+const User = require("../models/User");
 
+/**
+ * STAFF cria serviço para a sua oficina
+ */
 router.post(
-    "/:oficinaId",
-    auth,
-    verificarRole(["admin", "staff"]),
+    "/",
+    verificarToken,
+    verificarRole(["staff"]),
     async (req, res) => {
-        const { oficinaId } = req.params;
+        try {
+            const { nome, preco, duracao, descricaoPublica, descricaoPrivada } = req.body;
 
-        const servico = await Servico.create({
-            ...req.body,
-            oficina: oficinaId
-        });
+            const staff = await User.findById(req.user.id);
 
-        res.status(201).json(servico);
+            if (!staff.oficina) {
+                return res.status(400).json({ erro: "Staff sem oficina associada" });
+            }
+
+            const servico = await Servico.create({
+                nome,
+                preco,
+                duracao,
+                descricaoPublica,
+                descricaoPrivada,
+                oficina: staff.oficina
+            });
+
+            res.status(201).json(servico);
+        } catch (error) {
+            res.status(500).json({ erro: error.message });
+        }
     }
 );
 
-router.get("/:oficinaId", async (req, res) => {
-    const servicos = await Servico.find({ oficina: req.params.oficinaId });
-    res.json(servicos);
-});
+/**
+ * STAFF vê serviços da sua oficina
+ */
+router.get(
+    "/",
+    verificarToken,
+    verificarRole(["staff"]),
+    async (req, res) => {
+        try {
+            const staff = await User.findById(req.user.id);
+
+            if (!staff.oficina) {
+                return res.status(400).json({ erro: "Staff sem oficina associada" });
+            }
+
+            const servicos = await Servico.find({ oficina: staff.oficina });
+            res.json(servicos);
+        } catch (error) {
+            res.status(500).json({ erro: error.message });
+        }
+    }
+);
 
 module.exports = router;

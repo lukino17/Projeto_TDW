@@ -27,9 +27,10 @@ const MarcacaoSchema = new mongoose.Schema({
     },
     estado: {
         type: String,
-        enum: ['agendada', 'cancelada', 'concluida'],
-        default: 'agendada'
+        enum: ["agendada", "confirmada", "cancelada", "concluida"],
+        default: "agendada"
     }
+
 }, {
     timestamps: true
 });

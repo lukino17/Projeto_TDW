@@ -22,6 +22,40 @@ router.post(
         res.status(201).json(oficina);
     }
 );
+/**
+ * ADMIN associa um staff a uma oficina
+ */
+router.put(
+    "/:oficinaId/associar-staff/:staffId",
+    verificarToken,
+    verificarRole(["admin"]),
+    async (req, res) => {
+        try {
+            const { oficinaId, staffId } = req.params;
+
+            const oficina = await Oficina.findById(oficinaId);
+            if (!oficina) {
+                return res.status(404).json({ erro: "Oficina não encontrada" });
+            }
+
+            const staff = await User.findById(staffId);
+            if (!staff || staff.role !== "staff") {
+                return res.status(400).json({ erro: "Utilizador não é staff" });
+            }
+
+            staff.oficina = oficinaId;
+            await staff.save();
+
+            res.json({
+                mensagem: "Staff associado à oficina com sucesso",
+                staff
+            });
+        } catch (error) {
+            res.status(500).json({ erro: error.message });
+        }
+    }
+);
+
 
 // 🔓 LISTAR OFICINAS — TODOS
 router.get('/', async (req, res) => {
