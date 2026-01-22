@@ -1,4 +1,6 @@
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
+
 const cors = require('cors');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -117,34 +119,47 @@ app.post('/teste', (req, res) => {
     }
     });
 
-    app.post('/auth/login', async (req, res) => {
+app.post("/auth/login", async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        const user = await User.findOne({ email }).populate("oficina");
 
-        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ erro: 'Email ou password incorretos' });
+            return res.status(400).json({ erro: "Email ou password incorretos" });
         }
-
 
         if (user.password !== password) {
-            return res.status(400).json({ erro: 'Email ou password incorretos' });
+            return res.status(400).json({ erro: "Email ou password incorretos" });
         }
 
+        // 🔑 GERAR TOKEN
+        const token = jwt.sign(
+            {
+                id: user._id,
+                role: user.role
+            },
+            process.env.JWT_SECRET || "segredo_super_secreto",
+            { expiresIn: "1d" }
+        );
+
         res.json({
-            mensagem: 'Login efetuado com sucesso',
+            mensagem: "Login efetuado com sucesso",
+            token,
             user: {
                 id: user._id,
                 nome: user.nome,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                oficina: user.oficina || null
             }
         });
+
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
-    });
+});
+
 
 app.post('/oficinas', async (req, res) => {
     try {

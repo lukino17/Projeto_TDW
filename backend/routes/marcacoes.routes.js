@@ -50,22 +50,27 @@ router.get(
     verificarToken,
     verificarRole(["staff"]),
     async (req, res) => {
-        const staff = await User.findById(req.user.id);
+        try {
+            const staff = await User.findById(req.user.id);
 
-        if (!staff.oficina) {
-            return res.status(400).json({ erro: "Staff sem oficina associada" });
+            if (!staff || !staff.oficina) {
+                return res.status(400).json({ erro: "Staff sem oficina associada" });
+            }
+
+            const marcacoes = await Marcacao.find({
+                oficina: staff.oficina
+            })
+                .populate("cliente", "nome email")
+                .populate("veiculo")
+                .populate("servico");
+
+            res.json(marcacoes);
+        } catch (error) {
+            res.status(500).json({ erro: error.message });
         }
-
-        const marcacoes = await Marcacao.find({
-            oficina: staff.oficina
-        })
-            .populate("cliente", "nome email")
-            .populate("veiculo")
-            .populate("servico");
-
-        res.json(marcacoes);
     }
 );
+
 
 // STAFF vê marcações da sua oficina
 router.get(
@@ -218,5 +223,23 @@ router.put(
         res.json(marcacao);
     }
 );
+
+
+// ADMIN - todas as marcações
+router.get(
+    "/admin",
+    verificarToken,
+    verificarRole(["admin"]),
+    async (req, res) => {
+        const marcacoes = await Marcacao.find()
+            .populate("cliente", "nome email")
+            .populate("oficina", "nome")
+            .populate("servico", "nome")
+            .populate("veiculo");
+
+        res.json(marcacoes);
+    }
+);
+
 
 module.exports = router;

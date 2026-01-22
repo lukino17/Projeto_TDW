@@ -3,16 +3,17 @@ const jwt = require("jsonwebtoken");
 module.exports = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader)
+    if (!authHeader) {
         return res.status(401).json({ erro: "Token não fornecido" });
+    }
 
     const token = authHeader.split(" ")[1];
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
+        req.user = decoded; // { id, role }
         next();
-    } catch (err) {
-        return res.status(401).json({ erro: "Token inválido" });
+    } catch {
+        res.status(401).json({ erro: "Token inválido" });
     }
 };

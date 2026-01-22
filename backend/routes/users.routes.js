@@ -7,14 +7,15 @@ const verificarRole = require("../middlewares/verificarRole");
 /**
  * ADMIN associa um staff a uma oficina
  */
+// routes/users.routes.js
 router.put(
-    "/:id/atribuir-oficina",
+    "/atribuir-oficina",
     verificarToken,
     verificarRole(["admin"]),
     async (req, res) => {
-        const { oficinaId } = req.body;
+        const { staffId, oficinaId } = req.body;
 
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(staffId);
         if (!user) {
             return res.status(404).json({ erro: "Utilizador não encontrado" });
         }
@@ -29,5 +30,38 @@ router.put(
         res.json({ mensagem: "Staff associado à oficina com sucesso" });
     }
 );
+
+
+// ADMIN - ver staff de uma oficina
+    router.get(
+        "/staff/oficina/:id",
+        verificarToken,
+        verificarRole(["admin"]),
+        async (req, res) => {
+            const staff = await User.find({
+                role: "staff",
+                oficina: req.params.id
+            }).select("nome email");
+
+            res.json(staff);
+        }
+    );
+
+
+router.get(
+    "/staffs/livres",
+    verificarToken,
+    verificarRole(["admin"]),
+    async (req, res) => {
+        const staffs = await User.find({
+            role: "staff",
+            oficina: { $exists: false }
+        }).select("nome email");
+
+        res.json(staffs);
+    }
+);
+
+
 
 module.exports = router;

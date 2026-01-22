@@ -56,6 +56,18 @@ router.put(
     }
 );
 
+// ADMIN - listar todas as oficinas
+router.get(
+    "/admin",
+    verificarToken,
+    verificarRole(["admin"]),
+    async (req, res) => {
+        const oficinas = await Oficina.find();
+        res.json(oficinas);
+    }
+);
+
+
 
 // 🔓 LISTAR OFICINAS — TODOS
 router.get('/', async (req, res) => {

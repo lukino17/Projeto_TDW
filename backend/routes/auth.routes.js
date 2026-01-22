@@ -48,16 +48,21 @@ router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email }).populate("oficina");
-        if (!user) return res.status(401).json({ erro: "Credenciais inválidas" });
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ erro: "Email ou password incorretos" });
+        }
 
         const passwordOk = await bcrypt.compare(password, user.password);
-        if (!passwordOk) return res.status(401).json({ erro: "Credenciais inválidas" });
+        if (!passwordOk) {
+            return res.status(400).json({ erro: "Email ou password incorretos" });
+        }
 
+        // 🔑 GERAR TOKEN
         const token = jwt.sign(
             { id: user._id, role: user.role },
-            process.env.JWT_SECRET || "segredo_super_secreto",
-            { expiresIn: "1h" }
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
         );
 
         res.json({
@@ -65,12 +70,12 @@ router.post("/login", async (req, res) => {
             user: {
                 id: user._id,
                 nome: user.nome,
-                role: user.role,
-                oficina: user.oficina
+                email: user.email,
+                role: user.role
             }
         });
-    } catch (err) {
-        res.status(500).json({ erro: err.message });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
     }
 });
 

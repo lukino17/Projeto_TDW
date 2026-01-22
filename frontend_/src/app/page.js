@@ -11,6 +11,23 @@ export default function Page() {
     const [mensagem, setMensagem] = useState("");
     const [token, setToken] = useState(null);
 
+
+    // ADMIN
+    const [adminOficinas, setAdminOficinas] = useState([]);
+
+    const [staffs, setStaffs] = useState([]);
+
+    const [nomeOficina, setNomeOficina] = useState("");
+    const [localizacao, setLocalizacao] = useState("");
+    const [contacto, setContacto] = useState("");
+
+
+    // ADMIN - atribuir staff
+    const [staffDisponiveis, setStaffDisponiveis] = useState([]);
+    const [staffSelecionado, setStaffSelecionado] = useState("");
+    const [oficinaSelecionadaAdmin, setOficinaSelecionadaAdmin] = useState("");
+
+
     // USER
     const [user, setUser] = useState(null);
 
@@ -58,6 +75,41 @@ export default function Page() {
         }
     };
 
+    // ---------------- ADMIN ----------------
+    const carregarOficinasAdmin = async () => {
+        const r = await fetch("http://localhost:3000/oficinas", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setAdminOficinas(await r.json());
+    };
+
+
+
+    const criarOficina = async () => {
+        const r = await fetch("http://localhost:3000/oficinas", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                nome: nomeOficina,
+                localizacao,
+                contacto
+            })
+        });
+
+        if (r.ok) {
+            setNomeOficina("");
+            setLocalizacao("");
+            setContacto("");
+            carregarOficinasAdmin();
+        }
+    };
+
+
+
+    //LOGOUT
     const logout = () => {
         setUser(null);
         setToken(null);
@@ -151,6 +203,43 @@ export default function Page() {
     };
 
 
+    const carregarStaffsLivres = async () => {
+        const r = await fetch("http://localhost:3000/users/staffs/livres", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const dados = await r.json();
+        setStaffs(dados);
+    };
+
+
+    const atribuirStaff = async () => {
+        if (!staffSelecionado || !oficinaSelecionadaAdmin) return;
+
+        await fetch("http://localhost:3000/users/atribuir-oficina", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                staffId: staffSelecionado,
+                oficinaId: oficinaSelecionadaAdmin
+            })
+        });
+
+        setStaffSelecionado("");
+        setOficinaSelecionadaAdmin("");
+
+        carregarStaffsLivres();
+        carregarOficinasAdmin();
+    };
+
+
+
+
     // ---------------- EFFECT ----------------
     useEffect(() => {
         if (!user || !token) return;
@@ -164,7 +253,13 @@ export default function Page() {
         if (user.role === "staff") {
             carregarMarcacoesOficina();
         }
+
+        if (user.role === "admin") {
+            carregarOficinasAdmin();
+            carregarStaffsLivres();
+        }
     }, [user, token]);
+
 
     // ---------------- UI ----------------
     if (!user) {
@@ -250,7 +345,7 @@ export default function Page() {
                         <p>Sem marcações.</p>
                     )}
 
-                    {marcacoesOficina.map(m => (
+                    {Array.isArray(marcacoesOficina) && marcacoesOficina.map(m => (
                         <div key={m._id} className="card">
                             <strong>{m.servico?.nome}</strong><br />
                             Cliente: {m.cliente?.nome}<br />
@@ -278,6 +373,80 @@ export default function Page() {
                     ))}
                 </>
             )}
+            {/* -------- ADMIN -------- */}
+            {user.role === "admin" && (
+                <>
+                    <h2>Dashboard Admin</h2>
+
+                    <div className="card">
+                        <h3>Criar Oficina</h3>
+
+                        <input
+                            placeholder="Nome"
+                            value={nomeOficina}
+                            onChange={e => setNomeOficina(e.target.value)}
+                        />
+
+                        <input
+                            placeholder="Localização"
+                            value={localizacao}
+                            onChange={e => setLocalizacao(e.target.value)}
+                        />
+
+                        <input
+                            placeholder="Contacto"
+                            value={contacto}
+                            onChange={e => setContacto(e.target.value)}
+                        />
+
+                        <button onClick={criarOficina}>Criar Oficina</button>
+                    </div>
+
+                    <h3>Oficinas Existentes</h3>
+
+                    {adminOficinas.length === 0 && <p>Sem oficinas.</p>}
+
+                    {adminOficinas.map(o => (
+                        <div key={o._id} className="card">
+                            <strong>{o.nome}</strong><br />
+                            {o.localizacao}<br />
+                            {o.contacto}
+                        </div>
+                    ))}
+
+                    <div className="card">
+                        <h3>Atribuir Staff a Oficina</h3>
+
+                        <select onChange={e => setStaffSelecionado(e.target.value)}>
+                            <option value="">Selecionar staff</option>
+                            {staffs.map(s => (
+                                <option key={s._id} value={s._id}>
+                                    {s.nome} ({s.email})
+                                </option>
+                            ))}
+                        </select>
+
+
+                        <select
+                            value={oficinaSelecionadaAdmin}
+                            onChange={e => setOficinaSelecionadaAdmin(e.target.value)}
+                        >
+                            <option value="">Selecionar Oficina</option>
+                            {adminOficinas.map(o => (
+                                <option key={o._id} value={o._id}>
+                                    {o.nome}
+                                </option>
+                            ))}
+                        </select>
+
+                        <button onClick={atribuirStaff}>
+                            Atribuir
+                        </button>
+                    </div>
+
+                </>
+            )}
+
 
         </div>
     );
