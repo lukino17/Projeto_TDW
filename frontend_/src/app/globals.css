@@ -195,3 +195,56 @@ hr {
     border: none;
     border-top: 1px solid #eee;
 }
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+}
+
+.container {
+    padding: 20px;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #111827;
+    padding: 12px 24px;
+    color: white;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.links a {
+    margin-right: 16px;
+    color: #d1d5db;
+    text-decoration: none;
+}
+
+.links a:hover {
+    color: white;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user button {
+    background: #ef4444;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.user button:hover {
+    background: #dc2626;
+}
