@@ -5,6 +5,8 @@ const Marcacao = require("../models/Marcacao");
 const User = require("../models/User");
 const verificarToken = require("../middlewares/verificarToken");
 const verificarRole = require("../middlewares/verificarRole");
+const Notificacao = require("../models/Notificacao");
+
 
 /**
  * CLIENTE cria marcação
@@ -137,7 +139,15 @@ router.put(
             marcacao.estado = estado;
             await marcacao.save();
 
+            // criar notificação para o cliente
+            await Notificacao.create({
+                user: marcacao.cliente,
+                titulo: "Estado da marcação atualizado",
+                mensagem: `A sua marcação foi ${estado.replace("_", " ")}.`
+            });
+
             res.json(marcacao);
+
         } catch (error) {
             res.status(500).json({ erro: error.message });
         }

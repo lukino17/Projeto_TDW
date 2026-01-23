@@ -24,6 +24,8 @@ export default function Navbar() {
                     <a href="/cliente">Dashboard</a>
                     <a href="/cliente/veiculos">Veículos</a>
                     <a href="/cliente/marcacoes">Marcações</a>
+                    <a href="/cliente/notificacoes">Notificações</a>
+
                 </>
             )}
 

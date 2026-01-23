@@ -28,16 +28,19 @@ const oficinasRoutes = require("./routes/oficinas.routes");
 const usersRoutes = require("./routes/users.routes");
 const marcacoesRoutes = require("./routes/marcacoes.routes");
 const servicosRoutes = require("./routes/servicos.routes");
+const notificacoesRoutes = require("./routes/notificacoes.routes");
+const adminRoutes = require("./routes/admin.routes");
 
+
+app.use("/admin", adminRoutes);
 app.use("/servicos", require("./routes/servicos.public.routes"));
-
 app.use("/servicos", servicosRoutes);
 app.use("/marcacoes", marcacoesRoutes);
+app.use("/notificacoes", notificacoesRoutes);
 app.use("/auth", authRoutes);
 app.use("/oficinas", oficinasRoutes);
 app.use("/users", usersRoutes);
 app.use("/veiculos", veiculosRoutes);
-
 app.use(express.json());
 
 

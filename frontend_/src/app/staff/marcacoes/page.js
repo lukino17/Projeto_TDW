@@ -8,6 +8,8 @@ const ESTADOS = ["agendada", "confirmada", "cancelada", "concluida" , "em_progre
 export default function StaffMarcacoesPage() {
     const [marcacoes, setMarcacoes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [mensagem, setMensagem] = useState("");
+
     const router = useRouter();
 
     useEffect(() => {
@@ -65,6 +67,9 @@ export default function StaffMarcacoesPage() {
                     m._id === id ? { ...m, estado: novoEstado } : m
                 )
             );
+            setMensagem("Cliente notificado com sucesso ");
+            setTimeout(() => setMensagem(""), 3000);
+
         } catch (err) {
             console.error(err);
             alert("Erro de ligação ao servidor");
@@ -76,6 +81,8 @@ export default function StaffMarcacoesPage() {
     return (
         <div className="page">
             <h1>Marcações da Oficina</h1>
+            {mensagem && <p style={{ color: "green" }}>{mensagem}</p>}
+
 
             {marcacoes.length === 0 && <p>Sem marcações.</p>}
 
@@ -94,7 +101,28 @@ export default function StaffMarcacoesPage() {
 
                     {/* ESTADO */}
                     <div style={{ marginTop: 10 }}>
-                        <label><strong>Estado:</strong></label>
+                        <p>
+                            <strong>Estado atual:</strong>{" "}
+                            <span
+                                style={{
+                                    padding: "4px 8px",
+                                    borderRadius: "6px",
+                                    fontSize: "14px",
+                                    background:
+                                        m.estado === "confirmada"
+                                            ? "#dcfce7"
+                                            : m.estado === "em_progresso"
+                                                ? "#fff7ed"
+                                                : m.estado === "cancelada"
+                                                    ? "#fee2e2"
+                                                    : "#e0e7ff",
+                                }}
+                            >
+                                {m.estado}
+                            </span>
+                        </p>
+
+                        <label><strong>Alterar estado:</strong></label>
                         <select
                             value={m.estado}
                             onChange={e =>
@@ -109,6 +137,7 @@ export default function StaffMarcacoesPage() {
                             ))}
                         </select>
                     </div>
+
                 </div>
             ))}
         </div>
