@@ -50,10 +50,12 @@ router.get(
     async (req, res) => {
         try {
             const marcacoes = await Marcacao.find()
-                .populate("cliente", "nome")
-                .populate("oficina", "nome")
                 .sort({ createdAt: -1 })
-                .limit(5);
+                .limit(10)
+                .populate("cliente", "nome")
+                .populate("servico", "nome")
+                .populate("oficina", "nome");
+
 
             res.json(marcacoes);
         } catch (err) {
@@ -61,5 +63,76 @@ router.get(
         }
     }
 );
+
+
+router.get("/utilizadores", verificarToken, verificarRole(["admin"]), async (req, res) => {
+    const users = await User.find().select("nome email role ativo");
+    res.json(users);
+});
+
+router.put("/utilizadores/:id/role", verificarToken, verificarRole(["admin"]), async (req, res) => {
+    const { role } = req.body;
+
+    if (!["cliente", "staff", "admin"].includes(role)) {
+        return res.status(400).json({ erro: "Role inválido" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { role },
+        { new: true }
+    );
+
+    res.json(user);
+});
+
+
+
+router.get("/servicos", verificarToken, verificarRole(["admin"]), async (req, res) => {
+    const servicos = await Servico.find().populate("oficina");
+    res.json(servicos);
+});
+
+
+
+router.post(
+    "/servicos",
+    verificarToken,
+    verificarRole(["admin"]),
+    async (req, res) => {
+        try {
+            const {
+                nome,
+                preco,
+                descricaoPublica,
+                duracao,
+                oficina
+            } = req.body;
+
+            const servico = new Servico({
+                nome,
+                preco,
+                descricaoPublica,
+                duracao,
+                oficina
+            });
+
+            await servico.save();
+
+            res.status(201).json(servico);
+        } catch (error) {
+            console.error(error);
+            res.status(400).json({ erro: error.message });
+        }
+    }
+);
+
+
+
+router.delete("/servicos/:id", verificarToken, verificarRole(["admin"]), async (req, res) => {
+    await Servico.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+});
+
 
 module.exports = router;

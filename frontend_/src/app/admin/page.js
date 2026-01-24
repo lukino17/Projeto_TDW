@@ -53,10 +53,10 @@ export default function AdminPage() {
     if (!resumo) return <p>A carregar dashboard...</p>;
 
     return (
-        <div className="page">
-            <h1>Dashboard do Administrador</h1>
+        <div className="admin-page">
+            <h1 className="titulo">Dashboard do Administrador</h1>
 
-            {/* CARDS */}
+            {/* CARDS RESUMO */}
             <div className="cards">
                 <Card titulo="Clientes" valor={resumo.clientes} />
                 <Card titulo="Staff" valor={resumo.staff} />
@@ -65,45 +65,74 @@ export default function AdminPage() {
             </div>
 
             {/* MARCAÇÕES RECENTES */}
-            <h2>Marcações Recentes</h2>
+            <section className="secao">
+                <div className="secao-header">
+                    <h2>Marcações Recentes</h2>
+                    <button
+                        className="btn-secundario"
+                        onClick={() => router.push("/admin/marcacoes")}
+                    >
+                        Ver todas
+                    </button>
+                </div>
 
-            {marcacoes.length === 0 && <p>Sem marcações.</p>}
+                {marcacoes.length === 0 ? (
+                    <p className="vazio">Sem marcações registadas.</p>
+                ) : (
+                    <div className="tabela-container">
+                        <table className="tabela">
+                            <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Serviço</th>
+                                <th>Data</th>
+                                <th>Estado</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {marcacoes.map(m => (
+                                <tr key={m._id}>
+                                    <td>{m.cliente?.nome}</td>
+                                    <td>{m.servico?.nome || "—"}</td>
+                                    <td>
+                                        {new Date(m.dataHora).toLocaleString("pt-PT")}
+                                    </td>
+                                    <td>
+                                        <span className={`estado ${m.estado}`}>
+                                            {m.estado}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </section>
 
-            <table className="tabela">
-                <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Serviço</th>
-                    <th>Data</th>
-                    <th>Estado</th>
-                </tr>
-                </thead>
-                <tbody>
-                {marcacoes.map(m => (
-                    <tr key={m._id}>
-                        <td>{m.cliente?.nome}</td>
-                        <td>{m.servico?.nome}</td>
-                        <td>{new Date(m.data).toLocaleDateString()}</td>
-                        <td>{m.estado}</td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+            {/* GESTÃO */}
+            <section className="secao">
+                <h2>Gestão do Sistema</h2>
 
-            {/* GESTÃO DE UTILIZADORES */}
-            <h2>Gestão</h2>
+                <div className="acoes">
+                    <button
+                        className="btn-primario"
+                        onClick={() => router.push("/admin/utilizadores")}
+                    >
+                        Gerir Utilizadores
+                    </button>
 
-            <div className="acoes">
-                <button onClick={() => router.push("/admin/utilizadores")}>
-                    Gerir Utilizadores
-                </button>
-
-                <button onClick={() => router.push("/admin/servicos")}>
-                    Gerir Serviços
-                </button>
-            </div>
+                    <button
+                        className="btn-primario"
+                        onClick={() => router.push("/admin/servicos")}
+                    >
+                        Gerir Serviços
+                    </button>
+                </div>
+            </section>
         </div>
     );
+
 }
 
 /* COMPONENTE CARD */
