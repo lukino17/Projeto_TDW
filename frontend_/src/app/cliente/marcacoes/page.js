@@ -22,19 +22,54 @@ export default function MarcacoesPage() {
             .then(d => setMarcacoes(Array.isArray(d) ? d : []));
     }, [user, token]);
 
+    const formatarEstado = (estado) => {
+        switch (estado) {
+            case "pendente": return "Pendente";
+            case "confirmada": return "Confirmada";
+            case "em_progresso": return "Em Progresso";
+            case "concluida": return "Concluída";
+            case "cancelada": return "Cancelada";
+            default: return estado;
+        }
+    };
+
+    const statusClass = (estado) => {
+        switch (estado) {
+            case "pendente": return "status pendente";
+            case "confirmada": return "status confirmada";
+            case "em_progresso": return "status progresso";
+            case "concluida": return "status concluida";
+            case "cancelada": return "status cancelada";
+            default: return "status";
+        }
+    };
+
     return (
-        <div>
-            <h1>Minhas Marcações</h1>
+        <div className="page">
+            <h1 className="page-title">Minhas Marcações</h1>
 
-            {marcacoes.length === 0 && <p>Sem marcações.</p>}
+            {marcacoes.length === 0 && (
+                <div className="empty-state">Ainda não tens marcações.</div>
+            )}
 
-            {marcacoes.map(m => (
-                <div key={m._id} className="card">
-                    {m.servico?.nome} <br />
-                    {new Date(m.dataHora).toLocaleString()} <br />
-                    Estado: {m.estado}
-                </div>
-            ))}
+            <div className="grid-marcacoes">
+                {marcacoes.map(m => (
+                    <div key={m._id} className="marcacao-card">
+                        <div className="marcacao-header">
+                            <h3>{m.servico?.nome}</h3>
+                            <span className={statusClass(m.estado)}>
+                                {formatarEstado(m.estado)}
+                            </span>
+                        </div>
+
+                        <div className="marcacao-info">
+                            <p><strong>Data:</strong> {new Date(m.dataHora).toLocaleString("pt-PT")}</p>
+                            <p><strong>Oficina:</strong> {m.oficina?.nome || "—"}</p>
+                            <p><strong>Veículo:</strong> {m.veiculo?.marca || "—"}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

@@ -64,6 +64,17 @@ export default function Login() {
                     Entrar
                 </button>
 
+                <p style={{ marginTop: "10px" }}>
+                    Não tens conta?{" "}
+                    <span
+                        style={{ color: "#4f46e5", cursor: "pointer", fontWeight: "bold" }}
+                        onClick={() => router.push("/register")}
+                                    >
+                        Regista-te
+                    </span>
+                </p>
+
+
                 {mensagem && (
                     <p style={styles.error}>
                         {mensagem}

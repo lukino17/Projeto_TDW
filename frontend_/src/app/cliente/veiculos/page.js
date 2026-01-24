@@ -5,13 +5,15 @@ import { useEffect, useState } from "react";
 export default function VeiculosPage() {
     const [token, setToken] = useState(null);
     const [user, setUser] = useState(null);
-
     const [veiculos, setVeiculos] = useState([]);
 
     const [marca, setMarca] = useState("");
     const [modelo, setModelo] = useState("");
     const [matricula, setMatricula] = useState("");
     const [ano, setAno] = useState("");
+    const [loading, setLoading] = useState(false);
+
+
 
     useEffect(() => {
         setToken(localStorage.getItem("token"));
@@ -29,6 +31,10 @@ export default function VeiculosPage() {
     }, [user, token]);
 
     const criarVeiculo = async () => {
+        if (!marca || !modelo || !matricula || !ano) return;
+
+        setLoading(true);
+
         const r = await fetch("http://localhost:3000/veiculos", {
             method: "POST",
             headers: {
@@ -41,26 +47,57 @@ export default function VeiculosPage() {
         const dados = await r.json();
 
         if (r.ok) {
-            setVeiculos([...veiculos, dados.veiculo]);
-            setMarca(""); setModelo(""); setMatricula(""); setAno("");
+            const novoVeiculo = dados.veiculo || dados; // cobre os dois casos
+
+            if (novoVeiculo && novoVeiculo.marca) {
+                setVeiculos(prev => [...prev, novoVeiculo]);
+            }
+
+            setMarca("");
+            setModelo("");
+            setMatricula("");
+            setAno("");
         }
+
+
+        setLoading(false);
     };
 
+
     return (
-        <div>
-            <h1>Meus Veículos</h1>
+        <div className="page">
+            <h1 className="page-title">Meus Veículos</h1>
 
-            <input placeholder="Marca" value={marca} onChange={e => setMarca(e.target.value)} />
-            <input placeholder="Modelo" value={modelo} onChange={e => setModelo(e.target.value)} />
-            <input placeholder="Matrícula" value={matricula} onChange={e => setMatricula(e.target.value)} />
-            <input placeholder="Ano" value={ano} onChange={e => setAno(e.target.value)} />
-            <button onClick={criarVeiculo}>Criar</button>
+            <div className="veiculo-form">
+                <input placeholder="Marca" value={marca} onChange={e => setMarca(e.target.value)} />
+                <input placeholder="Modelo" value={modelo} onChange={e => setModelo(e.target.value)} />
+                <input placeholder="Matrícula" value={matricula} onChange={e => setMatricula(e.target.value)} />
+                <input placeholder="Ano" value={ano} onChange={e => setAno(e.target.value)} />
+                <button onClick={criarVeiculo} disabled={loading}>
+                    {loading ? (
+                        <span className="spinner"></span>
+                    ) : (
+                        <>
+                            <span className="plus">＋</span> Adicionar Veículo
+                        </>
+                    )}
+                </button>
+            </div>
 
-            {veiculos.map(v => (
-                <div key={v._id} className="card">
-                    {v.marca} - {v.matricula}
-                </div>
-            ))}
+            {veiculos.length === 0 && (
+                <div className="empty-state">Nenhum veículo registado.</div>
+            )}
+
+            <div className="grid-veiculos">
+                {veiculos.filter(v => v && v.marca).map(v => (
+
+                    <div key={v._id} className="veiculo-card">
+                        <h3>{v.marca} {v.modelo}</h3>
+                        <p><strong>Matrícula:</strong> {v.matricula}</p>
+                        <p><strong>Ano:</strong> {v.ano}</p>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

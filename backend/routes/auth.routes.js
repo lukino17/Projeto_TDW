@@ -12,29 +12,28 @@ router.post("/register", async (req, res) => {
     try {
         const { nome, email, password, role } = req.body;
 
-        const userExists = await User.findOne({ email });
-        if (userExists) {
+        if (!nome || !email || !password) {
+            return res.status(400).json({ erro: "Preencha todos os campos" });
+        }
+
+        const existe = await User.findOne({ email });
+        if (existe) {
             return res.status(400).json({ erro: "Email já registado" });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hash = await bcrypt.hash(password, 10);
 
-        const user = await User.create({
+        const novoUser = new User({
             nome,
             email,
-            password: hashedPassword,
-            role
+            password: hash,
+            role: role || "cliente" // por defeito cliente
         });
 
-        res.status(201).json({
-            mensagem: "Utilizador criado com sucesso",
-            user: {
-                id: user._id,
-                nome: user.nome,
-                email: user.email,
-                role: user.role
-            }
-        });
+        await novoUser.save();
+
+        res.status(201).json({ mensagem: "Conta criada com sucesso" });
+
     } catch (err) {
         res.status(500).json({ erro: err.message });
     }

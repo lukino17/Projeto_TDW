@@ -360,3 +360,294 @@ body {
 .login-card button:hover {
     background: #4338ca;
 }
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+}
+
+.auth-card {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-card h1 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.auth-card input {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.auth-card button {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.auth-card button:hover {
+    background: #4338ca;
+}
+
+.mensagem {
+    text-align: center;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.card.destaque {
+    border-left: 5px solid #3498db;
+}
+.page {
+    padding: 40px;
+}
+
+.page-title {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.oficina-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.booking-card {
+    margin-top: 40px;
+}
+
+.form-grid {
+    display: grid;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+select, input {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.primary-btn {
+    background: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.success-btn {
+    background: #198754;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.page {
+    padding: 40px;
+}
+
+.page-title {
+    font-size: 30px;
+    margin-bottom: 25px;
+}
+
+.grid-marcacoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.marcacao-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.marcacao-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+}
+
+.marcacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.marcacao-info p {
+    margin: 6px 0;
+    font-size: 14px;
+}
+
+/* STATUS BADGES */
+.status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.pendente { background: #fff3cd; color: #856404; }
+.confirmada { background: #d4edda; color: #155724; }
+.progresso { background: #cce5ff; color: #004085; }
+.concluida { background: #d1e7dd; color: #0f5132; }
+.cancelada { background: #f8d7da; color: #721c24; }
+
+.empty-state {
+    padding: 40px;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    color: #777;
+}
+/* FORM VEÍCULOS */
+.veiculo-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.veiculo-form input {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.veiculo-form button {
+    grid-column: 1 / -1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.veiculo-form button:hover {
+    background: #1e40af;
+}
+
+/* GRID VEÍCULOS */
+.grid-veiculos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.veiculo-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.veiculo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+}
+
+.veiculo-card h3 {
+    margin-bottom: 10px;
+}
+
+.veiculo-form button {
+    grid-column: 1 / -1;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.veiculo-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+}
+
+.veiculo-form button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Ícone + */
+.plus {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Spinner */
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+

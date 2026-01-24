@@ -96,7 +96,7 @@ export default function StaffMarcacoesPage() {
                     <p><strong>Serviço:</strong> {m.servico?.nome}</p>
                     <p>
                         <strong>Data:</strong>{" "}
-                        {new Date(m.data).toLocaleDateString()}
+                        {new Date(m.dataHora).toLocaleString("pt-PT")}
                     </p>
 
                     {/* ESTADO */}

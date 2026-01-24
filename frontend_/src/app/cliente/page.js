@@ -30,7 +30,6 @@ export default function ClientePage() {
 
     useEffect(() => {
         if (!user || !token) return;
-
         carregarOficinas();
         carregarVeiculos();
     }, [user, token]);
@@ -51,12 +50,16 @@ export default function ClientePage() {
         const r = await fetch(`http://localhost:3000/veiculos/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-
         const dados = await r.json();
         setVeiculos(Array.isArray(dados) ? dados : []);
     };
 
     const criarMarcacao = async () => {
+        if (!veiculoSelecionado || !servicoSelecionado || !dataHora) {
+            alert("Preencha todos os campos!");
+            return;
+        }
+
         await fetch("http://localhost:3000/marcacoes", {
             method: "POST",
             headers: {
@@ -72,48 +75,64 @@ export default function ClientePage() {
         });
 
         alert("Marcação criada com sucesso!");
+        setOficinaSelecionada(null);
     };
 
     return (
-        <div className="app-container">
-            <h1>Área do Cliente</h1>
+        <div className="page">
+            <h1 className="page-title">Área do Cliente</h1>
 
-            <h2>Oficinas</h2>
-            {oficinas.map(o => (
-                <div key={o._id}>
-                    <strong>{o.nome}</strong>
-                    <button onClick={() => {
-                        setOficinaSelecionada(o);
-                        carregarServicos(o._id);
-                    }}>
-                        Ver serviços
+            {/* OFICINAS */}
+            <h2 className="section-title">Escolha uma Oficina</h2>
+            <div className="grid">
+                {oficinas.map(o => (
+                    <div key={o._id} className="card oficina-card">
+                        <h3>{o.nome}</h3>
+                        <button
+                            className="primary-btn"
+                            onClick={() => {
+                                setOficinaSelecionada(o);
+                                carregarServicos(o._id);
+                            }}
+                        >
+                            Ver Serviços
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            {/* FORM MARCAÇÃO */}
+            {oficinaSelecionada && (
+                <div className="card booking-card">
+                    <h2>Nova Marcação — {oficinaSelecionada.nome}</h2>
+
+                    <div className="form-grid">
+                        <select onChange={e => setVeiculoSelecionado(e.target.value)}>
+                            <option value="">Selecione um Veículo</option>
+                            {veiculos.map(v => (
+                                <option key={v._id} value={v._id}>
+                                    {v.marca} ({v.matricula})
+                                </option>
+                            ))}
+                        </select>
+
+                        <select onChange={e => setServicoSelecionado(e.target.value)}>
+                            <option value="">Selecione um Serviço</option>
+                            {servicos.map(s => (
+                                <option key={s._id} value={s._id}>{s.nome}</option>
+                            ))}
+                        </select>
+
+                        <input
+                            type="datetime-local"
+                            onChange={e => setDataHora(e.target.value)}
+                        />
+                    </div>
+
+                    <button className="success-btn" onClick={criarMarcacao}>
+                        Confirmar Marcação
                     </button>
                 </div>
-            ))}
-
-            {oficinaSelecionada && (
-                <>
-                    <h3>Nova Marcação</h3>
-
-                    <select onChange={e => setVeiculoSelecionado(e.target.value)}>
-                        <option value="">Veículo</option>
-                        {veiculos.map(v => (
-                            <option key={v._id} value={v._id}>
-                                {v.marca} ({v.matricula})
-                            </option>
-                        ))}
-                    </select>
-
-                    <select onChange={e => setServicoSelecionado(e.target.value)}>
-                        <option value="">Serviço</option>
-                        {servicos.map(s => (
-                            <option key={s._id} value={s._id}>{s.nome}</option>
-                        ))}
-                    </select>
-
-                    <input type="datetime-local" onChange={e => setDataHora(e.target.value)} />
-                    <button onClick={criarMarcacao}>Marcar</button>
-                </>
             )}
         </div>
     );
