@@ -1,88 +1,175 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function StaffAdminPage() {
-    const [token, setToken] = useState(null);
+    const router = useRouter();
+
+    const [token, setToken] = useState("");
     const [staffs, setStaffs] = useState([]);
     const [oficinas, setOficinas] = useState([]);
 
-    const [staffSelecionado, setStaffSelecionado] = useState("");
-    const [oficinaSelecionada, setOficinaSelecionada] = useState("");
+    const [staffSelecionado, setStaffSelecionado] = useState(null);
+    const [oficinaSelecionada, setOficinaSelecionada] = useState(null);
 
+    const [mensagem, setMensagem] = useState("");
+    const [erro, setErro] = useState("");
+    const [loading, setLoading] = useState(true);
+
+    /* ---------- AUTH ---------- */
     useEffect(() => {
-        setToken(localStorage.getItem("token"));
-        carregarStaffs();
-        carregarOficinas();
+        const u = localStorage.getItem("user");
+        const t = localStorage.getItem("token");
+
+        if (!u || !t) {
+            router.push("/");
+            return;
+        }
+
+        const parsed = JSON.parse(u);
+        if (parsed.role !== "admin") {
+            router.push("/");
+            return;
+        }
+
+        setToken(t);
+        carregarDados(t);
+        // eslint-disable-next-line
     }, []);
 
-    const carregarStaffs = async () => {
-        const r = await fetch("http://localhost:3000/users/staffs/livres", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
-        });
+    /* ---------- LOAD ---------- */
+    const carregarDados = async (token) => {
+        try {
+            setLoading(true);
 
-        const dados = await r.json();
-        setStaffs(Array.isArray(dados) ? dados : []);
+            const [rStaff, rOf] = await Promise.all([
+                fetch("http://localhost:3000/users/staffs/livres", {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                fetch("http://localhost:3000/oficinas")
+            ]);
+
+            setStaffs(await rStaff.json());
+            setOficinas(await rOf.json());
+        } catch {
+            setErro("Erro ao carregar dados");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const carregarOficinas = async () => {
-        const r = await fetch("http://localhost:3000/oficinas", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
-        });
-
-        const dados = await r.json();
-        setOficinas(Array.isArray(dados) ? dados : []);
-    };
-
+    /* ---------- ATRIBUIR ---------- */
     const atribuirStaff = async () => {
-        if (!staffSelecionado || !oficinaSelecionada) return;
+        setErro("");
+        setMensagem("");
 
-        await fetch("http://localhost:3000/users/atribuir-oficina", {
+        if (!staffSelecionado || !oficinaSelecionada) {
+            setErro("Seleciona um staff e uma oficina");
+            return;
+        }
+
+        const r = await fetch("http://localhost:3000/users/atribuir-oficina", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
             body: JSON.stringify({
-                staffId: staffSelecionado,
-                oficinaId: oficinaSelecionada
+                staffId: staffSelecionado._id,
+                oficinaId: oficinaSelecionada._id
             })
         });
 
-        setStaffSelecionado("");
-        setOficinaSelecionada("");
+        if (!r.ok) {
+            setErro("Erro ao atribuir staff");
+            return;
+        }
 
-        carregarStaffs();
-        carregarOficinas();
+        setMensagem("✅ Staff atribuído com sucesso!");
+
+        setStaffSelecionado(null);
+        setOficinaSelecionada(null);
+
+        carregarDados(token);
+        setTimeout(() => setMensagem(""), 3000);
     };
 
+    if (loading) return <p>A carregar...</p>;
+
     return (
-        <div className="app-container">
-            <h1>Atribuir Staff</h1>
+        <div className="page">
+            <h1 className="page-title">Atribuir Staff a Oficina</h1>
 
-            <select onChange={e => setStaffSelecionado(e.target.value)}>
-                <option value="">Selecionar staff</option>
-                {staffs.map(s => (
-                    <option key={s._id} value={s._id}>
-                        {s.nome} ({s.email})
-                    </option>
-                ))}
-            </select>
+            {erro && <div className="alert error">{erro}</div>}
+            {mensagem && <div className="alert success">{mensagem}</div>}
 
-            <select onChange={e => setOficinaSelecionada(e.target.value)}>
-                <option value="">Selecionar oficina</option>
-                {oficinas.map(o => (
-                    <option key={o._id} value={o._id}>
-                        {o.nome}
-                    </option>
-                ))}
-            </select>
+            <div className="grid-2">
+                {/* STAFF */}
+                <div className="card">
+                    <h2>Staff Livre</h2>
 
-            <button onClick={atribuirStaff}>Atribuir</button>
+                    {staffs.length === 0 && (
+                        <p className="muted">Sem staff disponível</p>
+                    )}
+
+                    <ul className="list">
+                        {staffs.map(s => (
+                            <li
+                                key={s._id}
+                                className={`list-item clickable ${
+                                    staffSelecionado?._id === s._id ? "active" : ""
+                                }`}
+                                onClick={() => setStaffSelecionado(s)}
+                            >
+                                <strong>{s.nome}</strong>
+                                <div className="muted">{s.email}</div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* OFICINAS */}
+                <div className="card">
+                    <h2>Oficinas</h2>
+
+                    <ul className="list">
+                        {oficinas.map(o => (
+                            <li
+                                key={o._id}
+                                className={`list-item clickable ${
+                                    oficinaSelecionada?._id === o._id ? "active" : ""
+                                }`}
+                                onClick={() => setOficinaSelecionada(o)}
+                            >
+                                <strong>{o.nome}</strong>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+
+            {/* RESUMO */}
+            <div className="card resumo" style={{ marginTop: 16 }}>
+                <h3>Resumo</h3>
+
+                <p>
+                    <strong>Staff:</strong>{" "}
+                    {staffSelecionado ? staffSelecionado.nome : "—"}
+                </p>
+                <p>
+                    <strong>Oficina:</strong>{" "}
+                    {oficinaSelecionada ? oficinaSelecionada.nome : "—"}
+                </p>
+
+                <button
+                    className="success-btn full"
+                    disabled={!staffSelecionado || !oficinaSelecionada}
+                    onClick={atribuirStaff}
+                >
+                    Atribuir Staff
+                </button>
+            </div>
         </div>
     );
 }

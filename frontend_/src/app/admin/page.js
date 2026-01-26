@@ -95,9 +95,16 @@ export default function AdminPage() {
                                     <td>{m.cliente?.nome}</td>
                                     <td>{m.servico?.nome || "—"}</td>
                                     <td>
-                                        {new Date(m.turno?.data).toLocaleDateString("pt-PT")} —{" "}
-                                        {m.turno?.horaInicio} às {m.turno?.horaFim}
+                                        {m.turno ? (
+                                            <>
+                                                {new Date(m.turno.data).toLocaleDateString("pt-PT")} —{" "}
+                                                {m.turno.horaInicio} às {m.turno.horaFim}
+                                            </>
+                                        ) : (
+                                            <span style={{ color: "#999" }}>Sem turno</span>
+                                        )}
                                     </td>
+
                                     <td>
                                         <span className={`estado ${m.estado}`}>
                                             {m.estado}

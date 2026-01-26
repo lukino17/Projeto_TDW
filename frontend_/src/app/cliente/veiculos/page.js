@@ -108,7 +108,7 @@ export default function VeiculosPage() {
             setMatricula("");
             setAno("");
 
-            setMsg("✅ Veículo adicionado!");
+            setMsg("Veículo adicionado!");
             setTimeout(() => setMsg(""), 2500);
         } catch {
             setErro("Erro ao ligar ao servidor");
@@ -153,7 +153,7 @@ export default function VeiculosPage() {
                 </div>
 
                 <button className="primary-btn full" onClick={criarVeiculo} disabled={creating}>
-                    {creating ? "A adicionar…" : "➕ Adicionar veículo"}
+                    {creating ? "A adicionar…" : "Adicionar veículo"}
                 </button>
             </div>
 

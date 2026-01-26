@@ -202,13 +202,13 @@ export default function ClienteMarcacoesPage() {
                 return;
             }
 
-            setMensagem("✅ Marcação criada! A vaga do turno foi atualizada.");
+            setMensagem("Marcação criada! A vaga do turno foi atualizada.");
 
             // refresh turnos e marcações
             await Promise.all([
                 carregarTurnos(oficinaSelecionada),
                 (async () => {
-                    const rM = await fetch(`http://localhost:3000/marcacoes/cliente/${user.id}`, {
+                    const rM = await fetch("http://localhost:3000/marcacoes/cliente", {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     const m = await rM.json();
@@ -299,14 +299,34 @@ export default function ClienteMarcacoesPage() {
                                         : "Escolhe uma oficina primeiro"}
                             </option>
 
-                            {turnos.map((t) => {
-                                const livres = (t.vagasTotais ?? 0) - (t.vagasOcupadas ?? 0);
+                            {turnos.map(t => {
+                                const agora = new Date();
+
+                                const dataFim = new Date(t.data);
+                                const [h, m] = t.horaFim.split(":");
+                                dataFim.setHours(h, m, 0, 0);
+
+                                const passou = dataFim <= agora;
+                                const disponiveis = t.vagasTotais - t.vagasOcupadas;
+
                                 return (
-                                    <option key={t._id} value={t._id} disabled={livres <= 0}>
-                                        {formatTurnoLabel(t)}
+                                    <option
+                                        key={t._id}
+                                        value={t._id}
+                                        disabled={passou || disponiveis === 0}
+                                    >
+                                        {new Date(t.data).toLocaleDateString("pt-PT")} —{" "}
+                                        {t.horaInicio} às {t.horaFim}
+                                        {" | "}
+                                        {passou
+                                            ? "Turno passado"
+                                            : disponiveis === 0
+                                                ? "Lotado"
+                                                : `${disponiveis} vagas`}
                                     </option>
                                 );
                             })}
+
                         </select>
 
                         {!loadingTurnos && oficinaSelecionada && turnos.length === 0 && (
@@ -350,11 +370,12 @@ export default function ClienteMarcacoesPage() {
                                         Oficina: {m.oficina?.nome || "—"} • Veículo: {m.veiculo?.matricula || "—"}
                                     </div>
                                     <div className="muted">
-                                        Turno:{" "}
-                                        {m.turno?.data
-                                            ? `${new Date(m.turno.data).toLocaleDateString("pt-PT")} — ${m.turno.horaInicio} às ${m.turno.horaFim}`
-                                            : "—"}
+                                        Turno: {m.turno
+                                        ? `${new Date(m.turno.data).toLocaleDateString("pt-PT")} — ${m.turno.horaInicio} às ${m.turno.horaFim}`
+                                        : "—"}
                                     </div>
+
+
                                 </div>
                             </div>
                         ))}
