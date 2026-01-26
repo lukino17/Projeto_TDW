@@ -21,15 +21,17 @@ const MarcacaoSchema = new mongoose.Schema({
         ref: 'Servico',
         required: true
     },
-    dataHora: {
-        type: Date,
-        required: true
-    },
     estado: {
         type: String,
         enum: ["agendada", "confirmada", "cancelada", "concluida" , "em_progresso"],
         default: "agendada"
+    },
+    turno: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Turno",
+        required: true
     }
+
 
 }, {
     timestamps: true

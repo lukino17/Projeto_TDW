@@ -30,8 +30,10 @@ const marcacoesRoutes = require("./routes/marcacoes.routes");
 const servicosRoutes = require("./routes/servicos.routes");
 const notificacoesRoutes = require("./routes/notificacoes.routes");
 const adminRoutes = require("./routes/admin.routes");
+const turnosRoutes = require("./routes/turno.routes");
 
 
+app.use("/turnos", turnosRoutes);
 app.use("/admin", adminRoutes);
 app.use("/servicos", require("./routes/servicos.public.routes"));
 app.use("/servicos", servicosRoutes);

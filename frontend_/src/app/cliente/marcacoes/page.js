@@ -1,75 +1,198 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function MarcacoesPage() {
-    const [token, setToken] = useState(null);
+export default function ClienteMarcacoesPage() {
+    const router = useRouter();
+
     const [user, setUser] = useState(null);
-    const [marcacoes, setMarcacoes] = useState([]);
+    const [token, setToken] = useState(null);
 
+    const [oficinas, setOficinas] = useState([]);
+    const [servicos, setServicos] = useState([]);
+    const [turnos, setTurnos] = useState([]);
+    const [veiculos, setVeiculos] = useState([]);
+
+    const [oficinaSelecionada, setOficinaSelecionada] = useState("");
+    const [servicoSelecionado, setServicoSelecionado] = useState("");
+    const [turnoSelecionado, setTurnoSelecionado] = useState("");
+    const [veiculoSelecionado, setVeiculoSelecionado] = useState("");
+
+    const [mensagem, setMensagem] = useState("");
+
+    /* ---------- AUTH ---------- */
     useEffect(() => {
-        setToken(localStorage.getItem("token"));
-        setUser(JSON.parse(localStorage.getItem("user")));
-    }, []);
+        const u = JSON.parse(localStorage.getItem("user"));
+        const t = localStorage.getItem("token");
 
+        if (!u || !t || u.role !== "cliente") {
+            router.push("/");
+            return;
+        }
+
+        setUser(u);
+        setToken(t);
+    }, [router]);
+
+    /* ---------- LOAD BASE ---------- */
     useEffect(() => {
         if (!user || !token) return;
 
-        fetch(`http://localhost:3000/marcacoes/cliente/${user.id}`, {
+        fetch("http://localhost:3000/oficinas")
+            .then(r => r.json())
+            .then(d => setOficinas(Array.isArray(d) ? d : []));
+
+        fetch(`http://localhost:3000/veiculos/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(r => r.json())
-            .then(d => setMarcacoes(Array.isArray(d) ? d : []));
+            .then(d => setVeiculos(Array.isArray(d) ? d : []));
     }, [user, token]);
 
-    const formatarEstado = (estado) => {
-        switch (estado) {
-            case "pendente": return "Pendente";
-            case "confirmada": return "Confirmada";
-            case "em_progresso": return "Em Progresso";
-            case "concluida": return "Concluída";
-            case "cancelada": return "Cancelada";
-            default: return estado;
-        }
+    /* ---------- LOAD SERVIÇOS ---------- */
+    const carregarServicos = async (oficinaId) => {
+        setServicoSelecionado("");
+        setTurnoSelecionado("");
+        setServicos([]);
+        setTurnos([]);
+
+        const r = await fetch(
+            `http://localhost:3000/oficinas/${oficinaId}/servicos`
+        );
+
+        const dados = await r.json();
+        setServicos(Array.isArray(dados) ? dados : []);
     };
 
-    const statusClass = (estado) => {
-        switch (estado) {
-            case "pendente": return "status pendente";
-            case "confirmada": return "status confirmada";
-            case "em_progresso": return "status progresso";
-            case "concluida": return "status concluida";
-            case "cancelada": return "status cancelada";
-            default: return "status";
+    /* ---------- LOAD TURNOS ---------- */
+    const carregarTurnos = async (oficinaId) => {
+        const r = await fetch(
+            `http://localhost:3000/turnos/disponiveis/${oficinaId}`,
+            {
+                headers: { Authorization: `Bearer ${token}` }
+            }
+        );
+
+        const dados = await r.json();
+        setTurnos(Array.isArray(dados) ? dados : []);
+    };
+
+    /* ---------- CRIAR MARCAÇÃO ---------- */
+    const criarMarcacao = async () => {
+        setMensagem("");
+
+        if (
+            !oficinaSelecionada ||
+            !veiculoSelecionado ||
+            !servicoSelecionado ||
+            !turnoSelecionado
+        ) {
+            setMensagem("❌ Preenche todos os campos");
+            return;
         }
+
+        const r = await fetch("http://localhost:3000/marcacoes", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                veiculo: veiculoSelecionado,
+                oficina: oficinaSelecionada,
+                servico: servicoSelecionado,
+                turno: turnoSelecionado
+            })
+        });
+
+        const dados = await r.json();
+
+        if (!r.ok) {
+            setMensagem(dados.erro || "Erro ao criar marcação");
+            return;
+        }
+
+        setMensagem("✅ Marcação criada com sucesso!");
+        setTurnoSelecionado("");
     };
 
     return (
         <div className="page">
-            <h1 className="page-title">Minhas Marcações</h1>
+            <h1>Nova Marcação</h1>
 
-            {marcacoes.length === 0 && (
-                <div className="empty-state">Ainda não tens marcações.</div>
-            )}
+            {mensagem && <p>{mensagem}</p>}
 
-            <div className="grid-marcacoes">
-                {marcacoes.map(m => (
-                    <div key={m._id} className="marcacao-card">
-                        <div className="marcacao-header">
-                            <h3>{m.servico?.nome}</h3>
-                            <span className={statusClass(m.estado)}>
-                                {formatarEstado(m.estado)}
-                            </span>
-                        </div>
+            {/* OFICINA */}
+            <select
+                value={oficinaSelecionada}
+                onChange={e => {
+                    const id = e.target.value;
+                    setOficinaSelecionada(id);
 
-                        <div className="marcacao-info">
-                            <p><strong>Data:</strong> {new Date(m.dataHora).toLocaleString("pt-PT")}</p>
-                            <p><strong>Oficina:</strong> {m.oficina?.nome || "—"}</p>
-                            <p><strong>Veículo:</strong> {m.veiculo?.marca || "—"}</p>
-                        </div>
-                    </div>
+                    if (id) {
+                        carregarServicos(id);
+                        carregarTurnos(id);
+                    } else {
+                        setServicos([]);
+                        setTurnos([]);
+                    }
+                }}
+            >
+                <option value="">Selecionar Oficina</option>
+                {oficinas.map(o => (
+                    <option key={o._id} value={o._id}>
+                        {o.nome}
+                    </option>
                 ))}
-            </div>
+            </select>
+
+            {/* VEÍCULO */}
+            <select
+                value={veiculoSelecionado}
+                onChange={e => setVeiculoSelecionado(e.target.value)}
+            >
+                <option value="">Selecionar Veículo</option>
+                {veiculos.map(v => (
+                    <option key={v._id} value={v._id}>
+                        {v.marca} ({v.matricula})
+                    </option>
+                ))}
+            </select>
+
+            {/* SERVIÇO */}
+            <select
+                value={servicoSelecionado}
+                onChange={e => setServicoSelecionado(e.target.value)}
+                disabled={!servicos.length}
+            >
+                <option value="">Selecionar Serviço</option>
+                {servicos.map(s => (
+                    <option key={s._id} value={s._id}>
+                        {s.nome}
+                    </option>
+                ))}
+            </select>
+
+            {/* TURNO */}
+            <select
+                value={turnoSelecionado}
+                onChange={e => setTurnoSelecionado(e.target.value)}
+                disabled={!turnos.length}
+            >
+                <option value="">Selecionar Turno</option>
+                {turnos.map(t => (
+                    <option key={t._id} value={t._id}>
+                        {new Date(t.data).toLocaleDateString("pt-PT")} —{" "}
+                        {t.horaInicio} às {t.horaFim} (
+                        {t.vagasTotais - t.vagasOcupadas} vagas)
+                    </option>
+                ))}
+            </select>
+
+            <button onClick={criarMarcacao}>
+                Criar Marcação
+            </button>
         </div>
     );
 }

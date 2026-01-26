@@ -85,7 +85,7 @@ export default function AdminPage() {
                             <tr>
                                 <th>Cliente</th>
                                 <th>Serviço</th>
-                                <th>Data</th>
+                                <th>Turno</th>
                                 <th>Estado</th>
                             </tr>
                             </thead>
@@ -95,7 +95,8 @@ export default function AdminPage() {
                                     <td>{m.cliente?.nome}</td>
                                     <td>{m.servico?.nome || "—"}</td>
                                     <td>
-                                        {new Date(m.dataHora).toLocaleString("pt-PT")}
+                                        {new Date(m.turno?.data).toLocaleDateString("pt-PT")} —{" "}
+                                        {m.turno?.horaInicio} às {m.turno?.horaFim}
                                     </td>
                                     <td>
                                         <span className={`estado ${m.estado}`}>
@@ -127,6 +128,13 @@ export default function AdminPage() {
                         onClick={() => router.push("/admin/servicos")}
                     >
                         Gerir Serviços
+                    </button>
+
+                    <button
+                        className="btn-primario"
+                        onClick={() => router.push("/admin/turnos")}
+                    >
+                        Gerir Turnos
                     </button>
                 </div>
             </section>

@@ -95,8 +95,12 @@ export default function StaffMarcacoesPage() {
                     </p>
                     <p><strong>Serviço:</strong> {m.servico?.nome}</p>
                     <p>
-                        <strong>Data:</strong>{" "}
-                        {new Date(m.dataHora).toLocaleString("pt-PT")}
+
+                            <strong>Turno:</strong>{" "}
+                            {new Date(m.turno?.data).toLocaleDateString("pt-PT")} —{" "}
+                            {m.turno?.horaInicio} às {m.turno?.horaFim}
+
+
                     </p>
 
                     {/* ESTADO */}

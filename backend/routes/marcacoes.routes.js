@@ -3,10 +3,11 @@ const router = express.Router();
 
 const Marcacao = require("../models/Marcacao");
 const User = require("../models/User");
-const verificarToken = require("../middlewares/verificarToken");
-const verificarRole = require("../middlewares/verificarRole");
+const Turno = require("../models/Turno");
 const Notificacao = require("../models/Notificacao");
 
+const verificarToken = require("../middlewares/verificarToken");
+const verificarRole = require("../middlewares/verificarRole");
 
 /**
  * CLIENTE cria marcação
@@ -17,17 +18,50 @@ router.post(
     verificarRole(["cliente"]),
     async (req, res) => {
         try {
-            const marcacao = await Marcacao.create({
-                ...req.body,
-                cliente: req.user.id
+            const { veiculo, oficina, servico, turno } = req.body;
+
+            if (!veiculo || !oficina || !servico || !turno) {
+                return res.status(400).json({ erro: "Campos obrigatórios em falta" });
+            }
+
+            const turnoDB = await Turno.findById(turno);
+
+            if (!turnoDB) {
+                return res.status(404).json({ erro: "Turno não encontrado" });
+            }
+
+            // validar se o turno pertence à oficina
+            if (String(turnoDB.oficina) !== String(oficina)) {
+                return res.status(400).json({ erro: "Turno não pertence à oficina" });
+            }
+
+            if (turnoDB.vagasOcupadas >= turnoDB.vagasTotais) {
+                return res.status(400).json({ erro: "Sem vagas neste turno" });
+            }
+
+            // criar marcação
+            const marcacao = new Marcacao({
+                cliente: req.user.id,
+                veiculo,
+                oficina,
+                servico,
+                turno
             });
 
+            await marcacao.save();
+
+            // ocupar vaga
+            turnoDB.vagasOcupadas += 1;
+            await turnoDB.save();
+
             res.status(201).json(marcacao);
-        } catch (error) {
-            res.status(400).json({ erro: error.message });
+
+        } catch (err) {
+            res.status(500).json({ erro: err.message });
         }
     }
 );
+
 
 /**
  * CLIENTE vê as suas marcações
@@ -38,7 +72,10 @@ router.get(
     verificarRole(["cliente"]),
     async (req, res) => {
         const marcacoes = await Marcacao.find({ cliente: req.user.id })
-            .populate("oficina servico veiculo");
+            .populate("cliente", "nome email")
+            .populate("veiculo")
+            .populate("servico")
+            .populate("turno")
 
         res.json(marcacoes);
     }
@@ -64,7 +101,8 @@ router.get(
             })
                 .populate("cliente", "nome email")
                 .populate("veiculo")
-                .populate("servico");
+                .populate("servico")
+                .populate("turno");
 
             res.json(marcacoes);
         } catch (error) {
@@ -73,35 +111,9 @@ router.get(
     }
 );
 
-
-// STAFF vê marcações da sua oficina
-router.get(
-    "/staff",
-    verificarToken,
-    verificarRole(["staff"]),
-    async (req, res) => {
-        try {
-            const staff = await User.findById(req.user.id);
-
-            if (!staff.oficina) {
-                return res.status(400).json({ erro: "Staff sem oficina associada" });
-            }
-
-            const marcacoes = await Marcacao.find({
-                oficina: staff.oficina
-            })
-                .populate("cliente", "nome email")
-                .populate("veiculo")
-                .populate("servico");
-
-            res.json(marcacoes);
-        } catch (error) {
-            res.status(500).json({ erro: error.message });
-        }
-    }
-);
-
-// STAFF atualiza estado da marcação
+/**
+ * STAFF atualiza estado da marcação
+ */
 router.put(
     "/:id/estado",
     verificarToken,
@@ -136,10 +148,18 @@ router.put(
                 return res.status(404).json({ erro: "Marcação não encontrada" });
             }
 
+            // se for cancelada, libertar vaga
+            if (estado === "cancelada" && marcacao.estado !== "cancelada") {
+                const turno = await Turno.findById(marcacao.turno);
+                if (turno && turno.vagasOcupadas > 0) {
+                    turno.vagasOcupadas -= 1;
+                    await turno.save();
+                }
+            }
+
             marcacao.estado = estado;
             await marcacao.save();
 
-            // criar notificação para o cliente
             await Notificacao.create({
                 user: marcacao.cliente,
                 titulo: "Estado da marcação atualizado",
@@ -154,88 +174,9 @@ router.put(
     }
 );
 
-
 /**
- * STAFF confirma marcação
+ * ADMIN vê todas as marcações
  */
-router.put(
-    "/:id/confirmar",
-    verificarToken,
-    verificarRole(["staff"]),
-    async (req, res) => {
-        const staff = await User.findById(req.user.id);
-
-        const marcacao = await Marcacao.findById(req.params.id);
-
-        if (!marcacao) {
-            return res.status(404).json({ erro: "Marcação não encontrada" });
-        }
-
-        if (String(marcacao.oficina) !== String(staff.oficina)) {
-            return res.status(403).json({ erro: "Sem permissão" });
-        }
-
-        marcacao.estado = "confirmada";
-        await marcacao.save();
-
-        res.json(marcacao);
-    }
-);
-
-/**
- * STAFF conclui marcação
- */
-router.put(
-    "/:id/concluir",
-    verificarToken,
-    verificarRole(["staff"]),
-    async (req, res) => {
-        const staff = await User.findById(req.user.id);
-        const marcacao = await Marcacao.findById(req.params.id);
-
-        if (!marcacao) {
-            return res.status(404).json({ erro: "Marcação não encontrada" });
-        }
-
-        if (String(marcacao.oficina) !== String(staff.oficina)) {
-            return res.status(403).json({ erro: "Sem permissão" });
-        }
-
-        marcacao.estado = "concluida";
-        await marcacao.save();
-
-        res.json(marcacao);
-    }
-);
-
-/**
- * STAFF cancela marcação
- */
-router.put(
-    "/:id/cancelar",
-    verificarToken,
-    verificarRole(["staff"]),
-    async (req, res) => {
-        const staff = await User.findById(req.user.id);
-        const marcacao = await Marcacao.findById(req.params.id);
-
-        if (!marcacao) {
-            return res.status(404).json({ erro: "Marcação não encontrada" });
-        }
-
-        if (String(marcacao.oficina) !== String(staff.oficina)) {
-            return res.status(403).json({ erro: "Sem permissão" });
-        }
-
-        marcacao.estado = "cancelada";
-        await marcacao.save();
-
-        res.json(marcacao);
-    }
-);
-
-
-// ADMIN - todas as marcações
 router.get(
     "/admin",
     verificarToken,
@@ -245,11 +186,11 @@ router.get(
             .populate("cliente", "nome email")
             .populate("oficina", "nome")
             .populate("servico", "nome")
-            .populate("veiculo");
+            .populate("veiculo")
+            .populate("turno");
 
         res.json(marcacoes);
     }
 );
-
 
 module.exports = router;
