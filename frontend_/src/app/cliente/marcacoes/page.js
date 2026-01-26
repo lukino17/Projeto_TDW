@@ -1,198 +1,366 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+function formatTurnoLabel(t) {
+    const data = t?.data ? new Date(t.data).toLocaleDateString("pt-PT") : "—";
+    const inicio = t?.horaInicio || "—";
+    const fim = t?.horaFim || "—";
+    const livres = (t?.vagasTotais ?? 0) - (t?.vagasOcupadas ?? 0);
+    const total = t?.vagasTotais ?? 0;
+    return `${data} — ${inicio} às ${fim} (${livres}/${total} vagas)`;
+}
+
+function badgeEstado(estado) {
+    const e = (estado || "").toLowerCase();
+    if (e === "concluida") return "estado green";
+    if (e === "em_progresso") return "estado orange";
+    if (e === "cancelada") return "estado red";
+    return "estado blue";
+}
 
 export default function ClienteMarcacoesPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const oficinaIdParam = searchParams.get("oficinaId");
 
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
+    const [token, setToken] = useState("");
 
-    const [oficinas, setOficinas] = useState([]);
-    const [servicos, setServicos] = useState([]);
-    const [turnos, setTurnos] = useState([]);
-    const [veiculos, setVeiculos] = useState([]);
-
-    const [oficinaSelecionada, setOficinaSelecionada] = useState("");
-    const [servicoSelecionado, setServicoSelecionado] = useState("");
-    const [turnoSelecionado, setTurnoSelecionado] = useState("");
-    const [veiculoSelecionado, setVeiculoSelecionado] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [loadingTurnos, setLoadingTurnos] = useState(false);
+    const [loadingMarcacao, setLoadingMarcacao] = useState(false);
 
     const [mensagem, setMensagem] = useState("");
+    const [erro, setErro] = useState("");
 
-    /* ---------- AUTH ---------- */
+    const [oficinas, setOficinas] = useState([]);
+    const [veiculos, setVeiculos] = useState([]);
+    const [servicos, setServicos] = useState([]);
+    const [turnos, setTurnos] = useState([]);
+
+    const [oficinaSelecionada, setOficinaSelecionada] = useState("");
+    const [veiculoSelecionado, setVeiculoSelecionado] = useState("");
+    const [servicoSelecionado, setServicoSelecionado] = useState("");
+    const [turnoSelecionado, setTurnoSelecionado] = useState("");
+
+    const [minhasMarcacoes, setMinhasMarcacoes] = useState([]);
+
     useEffect(() => {
-        const u = JSON.parse(localStorage.getItem("user"));
+        const u = localStorage.getItem("user");
         const t = localStorage.getItem("token");
 
-        if (!u || !t || u.role !== "cliente") {
+        if (!u || !t) {
             router.push("/");
             return;
         }
 
-        setUser(u);
-        setToken(t);
-    }, [router]);
+        const parsed = JSON.parse(u);
+        if (parsed.role !== "cliente") {
+            router.push("/");
+            return;
+        }
 
-    /* ---------- LOAD BASE ---------- */
+        setUser(parsed);
+        setToken(t);
+        // eslint-disable-next-line
+    }, []);
+
     useEffect(() => {
         if (!user || !token) return;
 
-        fetch("http://localhost:3000/oficinas")
-            .then(r => r.json())
-            .then(d => setOficinas(Array.isArray(d) ? d : []));
+        (async () => {
+            try {
+                setLoading(true);
+                setErro("");
 
-        fetch(`http://localhost:3000/veiculos/${user.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(r => r.json())
-            .then(d => setVeiculos(Array.isArray(d) ? d : []));
+                const [rOf, rV, rM] = await Promise.all([
+                    fetch("http://localhost:3000/oficinas"),
+                    fetch(`http://localhost:3000/veiculos/${user.id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    fetch(`http://localhost:3000/marcacoes/cliente/${user.id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
+
+                const of = await rOf.json();
+                const v = await rV.json();
+                const m = await rM.json();
+
+                setOficinas(Array.isArray(of) ? of : []);
+                setVeiculos(Array.isArray(v) ? v : []);
+                setMinhasMarcacoes(Array.isArray(m) ? m : []);
+
+                // pré-selecionar oficina se vier no query
+                if (oficinaIdParam) {
+                    setOficinaSelecionada(oficinaIdParam);
+                }
+            } catch (e) {
+                setErro("Erro ao ligar ao servidor");
+            } finally {
+                setLoading(false);
+            }
+        })();
+        // eslint-disable-next-line
     }, [user, token]);
 
-    /* ---------- LOAD SERVIÇOS ---------- */
-    const carregarServicos = async (oficinaId) => {
+    // quando escolhe oficina -> carrega serviços + turnos
+    useEffect(() => {
+        if (!oficinaSelecionada || !token) return;
+
         setServicoSelecionado("");
         setTurnoSelecionado("");
         setServicos([]);
         setTurnos([]);
 
-        const r = await fetch(
-            `http://localhost:3000/oficinas/${oficinaId}/servicos`
-        );
+        carregarServicos(oficinaSelecionada);
+        carregarTurnos(oficinaSelecionada);
+        // eslint-disable-next-line
+    }, [oficinaSelecionada]);
 
-        const dados = await r.json();
-        setServicos(Array.isArray(dados) ? dados : []);
+    const carregarServicos = async (oficinaId) => {
+        try {
+            setErro("");
+            const r = await fetch(`http://localhost:3000/oficinas/${oficinaId}/servicos`);
+            const dados = await r.json();
+            setServicos(Array.isArray(dados) ? dados : []);
+        } catch {
+            setServicos([]);
+        }
     };
 
-    /* ---------- LOAD TURNOS ---------- */
     const carregarTurnos = async (oficinaId) => {
-        const r = await fetch(
-            `http://localhost:3000/turnos/disponiveis/${oficinaId}`,
-            {
-                headers: { Authorization: `Bearer ${token}` }
-            }
-        );
+        try {
+            setLoadingTurnos(true);
+            setErro("");
 
-        const dados = await r.json();
-        setTurnos(Array.isArray(dados) ? dados : []);
+            const r = await fetch(
+                `http://localhost:3000/turnos/disponiveis/${oficinaId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const dados = await r.json();
+
+            if (!r.ok) {
+                setErro(dados.erro || "Erro ao carregar turnos");
+                setTurnos([]);
+                return;
+            }
+
+            // backend já deve devolver só disponíveis
+            setTurnos(Array.isArray(dados) ? dados : []);
+        } catch {
+            setTurnos([]);
+            setErro("Erro ao carregar turnos");
+        } finally {
+            setLoadingTurnos(false);
+        }
     };
 
-    /* ---------- CRIAR MARCAÇÃO ---------- */
+    const podeCriar = useMemo(() => {
+        return (
+            !!oficinaSelecionada &&
+            !!veiculoSelecionado &&
+            !!servicoSelecionado &&
+            !!turnoSelecionado &&
+            !loadingMarcacao
+        );
+    }, [oficinaSelecionada, veiculoSelecionado, servicoSelecionado, turnoSelecionado, loadingMarcacao]);
+
     const criarMarcacao = async () => {
         setMensagem("");
+        setErro("");
 
-        if (
-            !oficinaSelecionada ||
-            !veiculoSelecionado ||
-            !servicoSelecionado ||
-            !turnoSelecionado
-        ) {
-            setMensagem("❌ Preenche todos os campos");
+        if (!oficinaSelecionada || !veiculoSelecionado || !servicoSelecionado || !turnoSelecionado) {
+            setErro("Preenche todos os campos.");
             return;
         }
 
-        const r = await fetch("http://localhost:3000/marcacoes", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                veiculo: veiculoSelecionado,
-                oficina: oficinaSelecionada,
-                servico: servicoSelecionado,
-                turno: turnoSelecionado
-            })
-        });
+        try {
+            setLoadingMarcacao(true);
 
-        const dados = await r.json();
+            const r = await fetch("http://localhost:3000/marcacoes", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    veiculo: veiculoSelecionado,
+                    oficina: oficinaSelecionada,
+                    servico: servicoSelecionado,
+                    turno: turnoSelecionado,
+                }),
+            });
 
-        if (!r.ok) {
-            setMensagem(dados.erro || "Erro ao criar marcação");
-            return;
+            const dados = await r.json();
+
+            if (!r.ok) {
+                setErro(dados.erro || "Erro ao criar marcação");
+                return;
+            }
+
+            setMensagem("✅ Marcação criada! A vaga do turno foi atualizada.");
+
+            // refresh turnos e marcações
+            await Promise.all([
+                carregarTurnos(oficinaSelecionada),
+                (async () => {
+                    const rM = await fetch(`http://localhost:3000/marcacoes/cliente/${user.id}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const m = await rM.json();
+                    setMinhasMarcacoes(Array.isArray(m) ? m : []);
+                })(),
+            ]);
+
+            setTurnoSelecionado("");
+        } catch (e) {
+            setErro("Erro ao ligar ao servidor");
+        } finally {
+            setLoadingMarcacao(false);
+            setTimeout(() => setMensagem(""), 3500);
         }
-
-        setMensagem("✅ Marcação criada com sucesso!");
-        setTurnoSelecionado("");
     };
+
+    if (loading) return <div className="page"><div className="card">A carregar…</div></div>;
 
     return (
         <div className="page">
-            <h1>Nova Marcação</h1>
+            <div className="page-header">
+                <h1 className="page-title">Marcações</h1>
+                <p className="page-subtitle">Cria uma nova marcação escolhendo turno (com vagas).</p>
+            </div>
 
-            {mensagem && <p>{mensagem}</p>}
+            {mensagem && <div className="alert success">{mensagem}</div>}
+            {erro && <div className="alert error">{erro}</div>}
 
-            {/* OFICINA */}
-            <select
-                value={oficinaSelecionada}
-                onChange={e => {
-                    const id = e.target.value;
-                    setOficinaSelecionada(id);
+            {/* NOVA MARCAÇÃO */}
+            <div className="card">
+                <h2 className="section-title">Nova Marcação</h2>
 
-                    if (id) {
-                        carregarServicos(id);
-                        carregarTurnos(id);
-                    } else {
-                        setServicos([]);
-                        setTurnos([]);
-                    }
-                }}
-            >
-                <option value="">Selecionar Oficina</option>
-                {oficinas.map(o => (
-                    <option key={o._id} value={o._id}>
-                        {o.nome}
-                    </option>
-                ))}
-            </select>
+                <div className="form-grid">
+                    <div>
+                        <label className="label">Oficina</label>
+                        <select
+                            value={oficinaSelecionada}
+                            onChange={(e) => setOficinaSelecionada(e.target.value)}
+                        >
+                            <option value="">Selecionar Oficina</option>
+                            {oficinas.map((o) => (
+                                <option key={o._id} value={o._id}>{o.nome}</option>
+                            ))}
+                        </select>
+                    </div>
 
-            {/* VEÍCULO */}
-            <select
-                value={veiculoSelecionado}
-                onChange={e => setVeiculoSelecionado(e.target.value)}
-            >
-                <option value="">Selecionar Veículo</option>
-                {veiculos.map(v => (
-                    <option key={v._id} value={v._id}>
-                        {v.marca} ({v.matricula})
-                    </option>
-                ))}
-            </select>
+                    <div>
+                        <label className="label">Veículo</label>
+                        <select
+                            value={veiculoSelecionado}
+                            onChange={(e) => setVeiculoSelecionado(e.target.value)}
+                        >
+                            <option value="">Selecionar Veículo</option>
+                            {veiculos.map((v) => (
+                                <option key={v._id} value={v._id}>
+                                    {v.marca} ({v.matricula})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-            {/* SERVIÇO */}
-            <select
-                value={servicoSelecionado}
-                onChange={e => setServicoSelecionado(e.target.value)}
-                disabled={!servicos.length}
-            >
-                <option value="">Selecionar Serviço</option>
-                {servicos.map(s => (
-                    <option key={s._id} value={s._id}>
-                        {s.nome}
-                    </option>
-                ))}
-            </select>
+                    <div>
+                        <label className="label">Serviço</label>
+                        <select
+                            value={servicoSelecionado}
+                            onChange={(e) => setServicoSelecionado(e.target.value)}
+                            disabled={!oficinaSelecionada}
+                        >
+                            <option value="">{oficinaSelecionada ? "Selecionar Serviço" : "Escolhe uma oficina primeiro"}</option>
+                            {servicos.map((s) => (
+                                <option key={s._id} value={s._id}>{s.nome}</option>
+                            ))}
+                        </select>
+                    </div>
 
-            {/* TURNO */}
-            <select
-                value={turnoSelecionado}
-                onChange={e => setTurnoSelecionado(e.target.value)}
-                disabled={!turnos.length}
-            >
-                <option value="">Selecionar Turno</option>
-                {turnos.map(t => (
-                    <option key={t._id} value={t._id}>
-                        {new Date(t.data).toLocaleDateString("pt-PT")} —{" "}
-                        {t.horaInicio} às {t.horaFim} (
-                        {t.vagasTotais - t.vagasOcupadas} vagas)
-                    </option>
-                ))}
-            </select>
+                    <div>
+                        <label className="label">Turno</label>
+                        <select
+                            value={turnoSelecionado}
+                            onChange={(e) => setTurnoSelecionado(e.target.value)}
+                            disabled={!oficinaSelecionada || loadingTurnos}
+                        >
+                            <option value="">
+                                {loadingTurnos
+                                    ? "A carregar turnos…"
+                                    : oficinaSelecionada
+                                        ? "Selecionar Turno"
+                                        : "Escolhe uma oficina primeiro"}
+                            </option>
 
-            <button onClick={criarMarcacao}>
-                Criar Marcação
-            </button>
+                            {turnos.map((t) => {
+                                const livres = (t.vagasTotais ?? 0) - (t.vagasOcupadas ?? 0);
+                                return (
+                                    <option key={t._id} value={t._id} disabled={livres <= 0}>
+                                        {formatTurnoLabel(t)}
+                                    </option>
+                                );
+                            })}
+                        </select>
+
+                        {!loadingTurnos && oficinaSelecionada && turnos.length === 0 && (
+                            <p className="muted" style={{ marginTop: 6 }}>
+                                Sem turnos disponíveis para esta oficina.
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <button
+                    className="success-btn full"
+                    disabled={!podeCriar}
+                    onClick={criarMarcacao}
+                >
+                    {loadingMarcacao ? "A criar…" : "Criar Marcação"}
+                </button>
+            </div>
+
+            {/* MINHAS MARCAÇÕES */}
+            <div className="card" style={{ marginTop: 16 }}>
+                <div className="row-between">
+                    <h2 className="section-title">Minhas Marcações</h2>
+                    <button className="ghost-btn" onClick={() => router.push("/cliente")}>
+                        Voltar às oficinas
+                    </button>
+                </div>
+
+                {minhasMarcacoes.length === 0 ? (
+                    <p className="muted">Ainda não tens marcações.</p>
+                ) : (
+                    <div className="list">
+                        {minhasMarcacoes.map((m) => (
+                            <div key={m._id} className="list-item">
+                                <div className="list-main">
+                                    <div className="list-title">
+                                        {m.servico?.nome || "Serviço"}{" "}
+                                        <span className={badgeEstado(m.estado)}>{m.estado}</span>
+                                    </div>
+                                    <div className="muted">
+                                        Oficina: {m.oficina?.nome || "—"} • Veículo: {m.veiculo?.matricula || "—"}
+                                    </div>
+                                    <div className="muted">
+                                        Turno:{" "}
+                                        {m.turno?.data
+                                            ? `${new Date(m.turno.data).toLocaleDateString("pt-PT")} — ${m.turno.horaInicio} às ${m.turno.horaFim}`
+                                            : "—"}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

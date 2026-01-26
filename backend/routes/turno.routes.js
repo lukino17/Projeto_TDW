@@ -81,6 +81,7 @@ router.get(
 /**
  * CLIENTE vê turnos disponíveis de uma oficina
  */
+// CLIENTE vê turnos disponíveis
 router.get(
     "/disponiveis/:oficinaId",
     verificarToken,
@@ -89,28 +90,10 @@ router.get(
         try {
             const { oficinaId } = req.params;
 
-            const turnos = await Turno.aggregate([
-                {
-                    $match: {
-                        oficina: new require("mongoose").Types.ObjectId(oficinaId)
-                    }
-                },
-                {
-                    $addFields: {
-                        vagasDisponiveis: {
-                            $subtract: ["$vagasTotais", "$vagasOcupadas"]
-                        }
-                    }
-                },
-                {
-                    $match: {
-                        vagasDisponiveis: { $gt: 0 }
-                    }
-                },
-                {
-                    $sort: { data: 1, horaInicio: 1 }
-                }
-            ]);
+            const turnos = await Turno.find({
+                oficina: oficinaId,
+                $expr: { $lt: ["$vagasOcupadas", "$vagasTotais"] }
+            }).sort({ data: 1, horaInicio: 1 });
 
             res.json(turnos);
         } catch (error) {
@@ -118,6 +101,7 @@ router.get(
         }
     }
 );
+
 
 
 module.exports = router;

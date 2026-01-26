@@ -149,13 +149,13 @@ export default function AdminTurnosPage() {
 
             {turnos.length === 0 && <p>Sem turnos.</p>}
 
-            <table className="tabela">
+            <table>
                 <thead>
                 <tr>
                     <th>Oficina</th>
                     <th>Data</th>
                     <th>Hora</th>
-                    <th>Vagas</th>
+                    <th>Ocupação</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -164,11 +164,12 @@ export default function AdminTurnosPage() {
                         <td>{t.oficina?.nome}</td>
                         <td>{new Date(t.data).toLocaleDateString("pt-PT")}</td>
                         <td>{t.horaInicio} - {t.horaFim}</td>
-                        <td>{t.vagasOcupadas}/{t.vagasTotais}</td>
+                        <td>{t.vagasOcupadas} / {t.vagasTotais}</td>
                     </tr>
                 ))}
                 </tbody>
             </table>
+
         </div>
     );
 }
